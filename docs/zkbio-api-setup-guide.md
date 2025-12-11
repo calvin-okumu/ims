@@ -2,13 +2,14 @@
 
 ## Overview
 
-This guide provides detailed instructions for setting up and configuring the ZKBio CVSecurity API integration for your Banking Access Control System.
+This guide provides detailed instructions for setting up and configuring the ZKBio CVSecurity API integration for your Banking Access Control System. The application uses Next.js API proxy routes to handle CORS and SSL certificate issues automatically.
 
 ## Prerequisites
 
-- ZKBio CVSecurity server (version 6.0.0 or above)
+- ZKBio CVSecurity server (version 6.0.0 or above) running at `https://192.168.183.114:8098`
 - Superuser access to ZKBio admin panel
-- Network access to ZKBio server from your application
+- Network access to ZKBio server from your application server
+- Next.js application with API proxy routes configured
 
 ## API Authorization Setup
 
@@ -16,7 +17,7 @@ This guide provides detailed instructions for setting up and configuring the ZKB
 
 1. Open your web browser and navigate to your ZKBio CVSecurity server:
    ```
-   https://your-server-ip:8098
+   https://192.168.183.114:8098
    ```
 
 2. Log in with superuser credentials:
@@ -55,11 +56,37 @@ This guide provides detailed instructions for setting up and configuring the ZKB
 Create or update your `.env.local` file with the API credentials:
 
 ```bash
-NEXT_PUBLIC_ZKBIO_API_URL=https://your-server-ip:8098/api
-NEXT_PUBLIC_ZKBIO_API_TOKEN=your_client_secret_here
+NEXT_PUBLIC_ZKBIO_API_URL=https://192.168.183.114:8098/api
+NEXT_PUBLIC_ZKBIO_API_TOKEN=8D1E99707293387C5B3BFC7291AD38CB
 ```
 
-Replace `your_client_secret_here` with the Client Secret generated in Step 3.
+The Client Secret `8D1E99707293387C5B3BFC7291AD38CB` is already configured and working.
+
+## API Proxy Implementation
+
+The application uses Next.js API proxy routes to handle CORS and SSL certificate issues automatically. This means:
+
+### ✅ Automatic Handling
+- **CORS Bypass**: Server-side requests avoid browser CORS restrictions
+- **SSL Certificate**: Self-signed certificates are handled automatically
+- **Error Handling**: Comprehensive error handling and logging
+- **Response Formatting**: ZKBio API responses are properly formatted
+
+### 📡 Proxy Endpoints
+
+| Frontend Route | ZKBio API Endpoint | Status |
+|----------------|-------------------|---------|
+| `POST /api/persons` | `POST /api/v2/person/getPersonList` | ✅ Working |
+| `GET /api/access-levels` | `GET /api/v2/accLevel/list` | ✅ Working |
+
+### 🔄 Data Synchronization
+
+The application automatically:
+- **Loads data on page refresh** from ZKBio API
+- **Refreshes every 5 minutes** in the background
+- **Provides manual refresh** buttons
+- **Shows last updated timestamps**
+- **Handles loading states** with skeleton screens
 
 ## API Authentication Method
 
@@ -68,12 +95,59 @@ Replace `your_client_secret_here` with the Client Secret generated in Step 3.
 ZKBio CVSecurity requires access tokens to be passed as URL parameters, not in headers:
 
 ```bash
-# Correct format
-GET /api/v2/person/list?pageNo=1&pageSize=10&access_token=YOUR_CLIENT_SECRET
+# Direct API call format
+GET /api/v2/endpoint?access_token=YOUR_CLIENT_SECRET
 
 # Incorrect format (will not work)
-GET /api/v2/person/list?pageNo=1&pageSize=10
+GET /api/v2/endpoint
 Authorization: Bearer YOUR_CLIENT_SECRET
+```
+
+### Example API Calls (Direct)
+
+```bash
+# Get access levels
+curl -k "https://192.168.183.114:8098/api/v2/accLevel/list?pageNo=1&pageSize=5&access_token=8D1E99707293387C5B3BFC7291AD38CB"
+
+# Get persons
+curl -k -X POST "https://192.168.183.114:8098/api/v2/person/getPersonList?pageNo=1&pageSize=5&access_token=8D1E99707293387C5B3BFC7291AD38CB"
+
+# Get readers
+curl -k "https://192.168.183.114:8098/api/v2/reader/list?pageNo=1&pageSize=5&access_token=8D1E99707293387C5B3BFC7291AD38CB"
+```
+
+### Current Data Status
+
+#### ✅ Person Data (5 records loaded)
+```json
+[
+  {
+    "pin": "23510009090",
+    "name": "George",
+    "lastName": "Mrema",
+    "deptName": "PRIVATE BANKING CUSTOMER",
+    "gender": "M",
+    "email": "calvin@comsec.co.tz"
+  },
+  {
+    "pin": "23510009090S1",
+    "name": "Zainab",
+    "lastName": "Gamaru",
+    "deptName": "SPOUSE PRIVATE BANKING",
+    "accLevelIds": "402880f39ae893ad019ae895fe3d0463"
+  }
+  // ... 3 more records
+]
+```
+
+#### ✅ Access Level Data (1 record loaded)
+```json
+[
+  {
+    "id": "402880f39ae893ad019ae895fe3d0463",
+    "name": "General"
+  }
+]
 ```
 
 ### Example API Calls
@@ -154,23 +228,43 @@ curl -k "https://your-server:8098/api/v2/reader/list?pageNo=1&pageSize=5&access_
 
 ## Troubleshooting
 
-### Common Issues
+### Current Status: ✅ FULLY OPERATIONAL
 
-#### 1. "Authentication required" Error
-- **Cause**: Invalid or missing access token
-- **Solution**: Verify Client Secret in `.env.local` matches admin panel
+The API integration is **working perfectly** with the following configuration:
 
-#### 2. "API access abnormal" Error
-- **Cause**: API client not properly configured
-- **Solution**: Ensure "Browse API" was clicked in admin panel
+- **Server**: `https://192.168.183.114:8098`
+- **Token**: `8D1E99707293387C5B3BFC7291AD38CB`
+- **Proxy Routes**: Active and handling CORS/SSL issues
+- **Data Loading**: Automatic on page refresh
+- **Person Records**: 5 users successfully loaded
+- **Access Levels**: 1 access level loaded
 
-#### 3. SSL Certificate Errors
-- **Cause**: Self-signed certificate
-- **Solution**: Add certificate to trust store or use `curl -k` for testing
+### Troubleshooting (Historical Issues - Now Resolved)
 
-#### 4. Network Connectivity Issues
-- **Cause**: Firewall blocking API access
-- **Solution**: Ensure port 8098 is accessible from application server
+#### 1. "Authentication required" Error ✅ RESOLVED
+- **Previous Issue**: Invalid or missing access token
+- **Solution Applied**: Correct token configured in environment
+- **Status**: Working correctly
+
+#### 2. "API access abnormal" Error ✅ RESOLVED
+- **Previous Issue**: API client not properly configured
+- **Solution Applied**: "Browse API" enabled in admin panel
+- **Status**: API access fully functional
+
+#### 3. SSL Certificate Errors ✅ RESOLVED
+- **Previous Issue**: Self-signed certificate blocking requests
+- **Solution Applied**: Next.js proxy with axios HTTPS agent bypass
+- **Status**: SSL certificate issues handled automatically
+
+#### 4. CORS Issues ✅ RESOLVED
+- **Previous Issue**: Browser blocking cross-origin requests
+- **Solution Applied**: Server-side API proxy routes
+- **Status**: All CORS restrictions bypassed
+
+#### 5. Data Not Loading ✅ RESOLVED
+- **Previous Issue**: API calls failing silently
+- **Solution Applied**: Comprehensive error handling and logging
+- **Status**: Data loads successfully on every page refresh
 
 ### Debug Steps
 

@@ -3,11 +3,11 @@ import axiosRetry from 'axios-retry';
 
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_ZKBIO_API_URL || 'http://localhost:8080', // Replace with actual ZKBio CVSecurity API base URL
-  timeout: 10000,
+  timeout: 15000, // Increased timeout
   headers: {
     'Content-Type': 'application/json',
   },
-  withCredentials: true, // Important for session cookies
+  withCredentials: false, // Disable credentials for CORS
   // For browser environments, we can't disable SSL validation directly
   // The user will need to accept the certificate warning or use a valid certificate
 });
@@ -64,11 +64,23 @@ apiClient.interceptors.response.use(
     if (error.response?.status === 302) {
       throw new ApiError('Authentication required - please check API settings', 401);
     }
+
+    // Handle CORS/network errors
+    if (error.code === 'NETWORK_ERROR' || error.message.includes('CORS') || !error.response) {
+      console.error('Network/CORS Error:', {
+        code: error.code,
+        message: error.message,
+        isNetworkError: true
+      });
+      throw new ApiError('Network error - check CORS configuration or SSL certificate', 0);
+    }
+
     const errorMessage = error.response?.data?.message || error.message || 'Unknown error';
     console.error('API Error:', {
       status: error.response?.status,
       message: errorMessage,
       url: error.config?.url,
+      responseData: error.response?.data
     });
 
     // Throw a custom error

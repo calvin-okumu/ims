@@ -2,8 +2,26 @@ import apiClient from '../lib/apiClient';
 import { AccessLevel, AccessLevelCreateRequest } from '../types/api';
 
 export const getAccessLevels = async (pageNo = 1, pageSize = 50): Promise<AccessLevel[]> => {
-  const response = await apiClient.get(`/api/v2/accLevel/list?pageNo=${pageNo}&pageSize=${pageSize}`);
-  return response.data.data || [];
+  try {
+    // Use Next.js API proxy to avoid CORS issues
+    const response = await fetch(`/api/access-levels?pageNo=${pageNo}&pageSize=${pageSize}`);
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Handle ZKBio response format
+    if (data.code === 0) {
+      return data.data?.data || [];
+    } else {
+      throw new Error(data.message || 'API Error');
+    }
+  } catch (error) {
+    console.error('Failed to fetch access levels:', error);
+    throw error;
+  }
 };
 
 export const createAccessLevel = async (level: AccessLevelCreateRequest): Promise<AccessLevel> => {

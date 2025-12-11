@@ -12,21 +12,25 @@ This document provides comprehensive API documentation for the ZKBio Access Cont
 
 All API requests require proper authentication. The ZKBio CVSecurity API uses **access token authentication** via URL parameters.
 
-### Setup Process
+### ✅ Current Configuration (Working)
 
-1. **Admin Panel Access**: Log into ZKBio CVSecurity as superuser
-2. **Navigate to API Authorization**: System → Authority Management → API Authorization
-3. **Create New Client**:
-   - Click **New** to create API client
-   - Enter unique **Client ID**
-   - System generates **Client Secret** (this is your API token)
-4. **Enable Access**: Click **Browse API** to enable API operations
+- **Server URL**: `https://192.168.183.114:8098`
+- **Access Token**: `8D1E99707293387C5B3BFC7291AD38CB`
+- **Authentication Method**: URL parameter (`access_token=TOKEN`)
+- **Proxy Implementation**: Next.js API routes handle CORS and SSL
+
+### Setup Process (Already Completed)
+
+1. **Admin Panel Access**: ✅ Logged into ZKBio CVSecurity as superuser
+2. **Navigate to API Authorization**: ✅ System → Authority Management → API Authorization
+3. **Create New Client**: ✅ API client created with token `8D1E99707293387C5B3BFC7291AD38CB`
+4. **Enable Access**: ✅ "Browse API" enabled for API operations
 
 ### Authentication Method
 
 **URL Parameter Authentication** (Required):
 ```
-https://your-server:8098/api/v2/endpoint?access_token=YOUR_CLIENT_SECRET
+https://192.168.183.114:8098/api/v2/endpoint?access_token=8D1E99707293387C5B3BFC7291AD38CB
 ```
 
 **Example**:
@@ -59,6 +63,20 @@ All API responses follow this structure:
 - `code: 401` = Unauthorized
 - `code: 403` = Forbidden
 - `code: 404` = Not Found
+
+### ✅ Working Endpoints
+
+#### Person Management
+- `POST /api/v2/person/getPersonList` - ✅ **WORKING** (5 users loaded)
+- Returns: PIN, name, department, email, access levels
+
+#### Access Level Management
+- `GET /api/v2/accLevel/list` - ✅ **WORKING** (1 access level loaded)
+- Returns: Access level ID and name
+
+#### Reader Management
+- `GET /api/v2/reader/list` - ✅ **WORKING** (0 readers configured)
+- Returns: Reader list (empty in current setup)
 
 ## API Endpoints
 

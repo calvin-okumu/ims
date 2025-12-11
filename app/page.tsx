@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Fingerprint, DoorOpen, Users, Database, CheckCircle, XCircle, AlertCircle, Shield, Plus, Trash2, MapPin, Clock, Activity } from 'lucide-react';
+import { UserPlus, Fingerprint, DoorOpen, Users, Database, CheckCircle, XCircle, AlertCircle, Shield, Plus, Trash2, MapPin, Clock, Activity, RefreshCw } from 'lucide-react';
 import { useAreaBasedDoorSelection } from '../hooks/useAreaBasedDoorSelection';
 import { getAccessLevels } from '../services/accessLevelService';
 import { getPersons } from '../services/personService';
@@ -10,6 +10,8 @@ import { AccessLevel, Person, Reader, AccessLog } from '../types/api';
 import Notification from '../components/Notification';
 import Skeleton from '../components/Skeleton';
 import ApiConnectivityTest from '../components/ApiConnectivityTest';
+import UserManagement from '../components/UserManagement';
+import AddUserModal from '../components/AddUserModal';
 
 // Form interfaces
 interface FormData {
@@ -50,9 +52,24 @@ interface AccessLevelForm {
 export default function BiometricAccessApp() {
   const [activeTab, setActiveTab] = useState('register');
   const [users, setUsers] = useState<any[]>([]);
-  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning' | 'info'; message: string } | null>(null);
+  const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning' | 'info' | 'loading'; message: string } | null>(null);
   const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
   const [accessLevels, setAccessLevels] = useState<AccessLevel[]>([]);
+
+  // Loading states
+  const [loading, setLoading] = useState({
+    accessLevels: false,
+    persons: false,
+    readers: false,
+    registration: false,
+    accessLevelCreation: false
+  });
+
+  // Modal states
+  const [showAddUserModal, setShowAddUserModal] = useState(false);
+
+  // Refresh triggers
+  const [userRefreshTrigger, setUserRefreshTrigger] = useState(0);
 
   // Use area-based door selection hook
   const {
@@ -99,17 +116,41 @@ export default function BiometricAccessApp() {
   }, []);
 
   const fetchAccessLevels = async () => {
+    setLoading(prev => ({ ...prev, accessLevels: true }));
     try {
       const levels = await getAccessLevels();
       setAccessLevels(levels);
     } catch (error) {
       console.error('Failed to fetch access levels:', error);
       setNotification({ message: 'Failed to load access levels from API', type: 'error' });
+    } finally {
+      setLoading(prev => ({ ...prev, accessLevels: false }));
     }
   };
 
   const showNotification = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') => {
     setNotification({ message, type });
+  };
+
+  // User management handlers
+  const handleUserAdded = (newUser: any) => {
+    showNotification(`User ${newUser.name} created successfully`, 'success');
+    // Trigger refresh of user list
+    setUserRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleUserSelect = (user: any) => {
+    showNotification(`Selected user: ${user.name}`, 'info');
+  };
+
+  const handleUserEdit = (user: any) => {
+    showNotification(`Edit functionality for ${user.name} - coming soon`, 'info');
+  };
+
+  const handleUserDelete = (user: any) => {
+    if (confirm(`Are you sure you want to delete user ${user.name}?`)) {
+      showNotification(`Delete functionality for ${user.name} - coming soon`, 'warning');
+    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -154,6 +195,7 @@ export default function BiometricAccessApp() {
   };
 
   const registerUser = async () => {
+    setLoading(prev => ({ ...prev, registration: true }));
     // Validation checks with detailed error messages
     const errors = [];
     
@@ -252,10 +294,13 @@ export default function BiometricAccessApp() {
     } catch (error) {
       console.error('Registration error:', error);
       showNotification('Registration failed: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error');
+    } finally {
+      setLoading(prev => ({ ...prev, registration: false }));
     }
   };
 
   const createAccessLevel = async () => {
+    setLoading(prev => ({ ...prev, accessLevelCreation: true }));
     if (!accessLevelForm.name.trim()) {
       showNotification('Access level name is required', 'error');
       return;
@@ -307,6 +352,8 @@ export default function BiometricAccessApp() {
     } catch (error) {
       console.error('Access level creation error:', error);
       showNotification('Failed to create access level: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error');
+    } finally {
+      setLoading(prev => ({ ...prev, accessLevelCreation: false }));
     }
   };
 
@@ -361,14 +408,28 @@ export default function BiometricAccessApp() {
               <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">ZKBio Security Access Control</h1>
               <p className="text-slate-400 text-sm sm:text-base">Private Banking Customer Management</p>
             </div>
-            <button
-              onClick={syncWithZKBio}
-              className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg flex items-center gap-2 transition-colors text-sm sm:text-base w-full sm:w-auto justify-center"
-            >
-              <Database size={18} />
-              <span className="hidden sm:inline">Sync with ZKBio</span>
-              <span className="sm:hidden">Sync</span>
-            </button>
+            <div className="flex gap-3 w-full sm:w-auto">
+              <button
+                onClick={() => {
+                  setUserRefreshTrigger(prev => prev + 1);
+                  fetchAccessLevels();
+                  showNotification('Data refreshed from API', 'success');
+                }}
+                className="bg-green-600 hover:bg-green-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg flex items-center gap-2 transition-colors text-sm sm:text-base flex-1 sm:flex-none justify-center"
+              >
+                <RefreshCw size={18} />
+                <span className="hidden sm:inline">Refresh Data</span>
+                <span className="sm:hidden">Refresh</span>
+              </button>
+              <button
+                onClick={syncWithZKBio}
+                className="bg-blue-600 hover:bg-blue-700 text-white px-4 sm:px-6 py-2 sm:py-3 rounded-lg flex items-center gap-2 transition-colors text-sm sm:text-base flex-1 sm:flex-none justify-center"
+              >
+                <Database size={18} />
+                <span className="hidden sm:inline">Sync with ZKBio</span>
+                <span className="sm:hidden">Sync</span>
+              </button>
+            </div>
           </div>
         </div>
 
@@ -647,83 +708,30 @@ export default function BiometricAccessApp() {
 
             <button
               onClick={registerUser}
-              className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-semibold text-lg transition-colors text-sm sm:text-base"
+              disabled={loading.registration}
+              className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-4 rounded-lg font-semibold text-lg transition-colors text-sm sm:text-base flex items-center justify-center"
             >
-              Register User & Sync to ZKBio
+              {loading.registration ? (
+                <>
+                  <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                  Registering...
+                </>
+              ) : (
+                'Register User & Sync to ZKBio'
+              )}
             </button>
           </div>
         )}
 
-        {/* Users List */}
+        {/* User Management */}
         {activeTab === 'users' && (
-          <div className="bg-slate-800 rounded-lg shadow-xl p-4 sm:p-6 border border-slate-700">
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Registered Users</h2>
-            
-            {users.length === 0 ? (
-              <div className="text-center py-12 text-slate-400">
-                <Users size={48} className="mx-auto mb-4 opacity-50" />
-                <p>No users registered yet</p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {users.map(user => (
-                  <div key={user.id} className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
-                    <div className="flex justify-between items-start mb-3">
-                      <div>
-                        <h4 className="text-white font-semibold text-lg">{user.firstName} {user.lastName}</h4>
-                        <p className="text-slate-400 text-sm">{user.accountNumber}</p>
-                      </div>
-                      <div className="text-green-400">
-                        <CheckCircle size={20} />
-                      </div>
-                    </div>
-                    
-                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 text-sm">
-                      <div>
-                        <span className="text-slate-400">User Type:</span>
-                        <p className="text-white capitalize">{user.userType}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Email:</span>
-                        <p className="text-white">{user.email || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Phone:</span>
-                        <p className="text-white">{user.phone || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Card Number:</span>
-                        <p className="text-white">{user.cardNo || 'N/A'}</p>
-                      </div>
-                      <div>
-                        <span className="text-slate-400">Gender:</span>
-                        <p className="text-white">{user.gender === 'M' ? 'Male' : 'Female'}</p>
-                      </div>
-                    </div>
-                    
-                    <div className="mb-3">
-                      <span className="text-slate-400">Fingerprint:</span>
-                      <div className="flex items-center gap-2 mt-1">
-                        <Fingerprint size={16} className="text-purple-400" />
-                        <span className="text-white text-sm">
-                          Registered (Quality: {user.fingerprintData?.quality || 0}%)
-                        </span>
-                      </div>
-                    </div>
-                    
-                    <div>
-                      <span className="text-slate-400">Access Level:</span>
-                      <div className="mt-2">
-                        <span className="bg-purple-600/20 text-purple-300 px-3 py-1 rounded-full text-sm font-medium">
-                          {user.selectedAccessLevel || 'Not assigned'}
-                        </span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </div>
+          <UserManagement
+            onUserSelect={handleUserSelect}
+            onUserEdit={handleUserEdit}
+            onUserDelete={handleUserDelete}
+            onAddUser={() => setShowAddUserModal(true)}
+            refreshTrigger={userRefreshTrigger}
+          />
         )}
 
         {/* Access Levels Management */}
@@ -857,9 +865,17 @@ export default function BiometricAccessApp() {
 
               <button
                 onClick={createAccessLevel}
-                className="w-full bg-green-600 hover:bg-green-700 text-white py-4 rounded-lg font-semibold text-lg transition-colors text-sm sm:text-base"
+                disabled={loading.accessLevelCreation}
+                className="w-full bg-green-600 hover:bg-green-700 disabled:bg-gray-400 disabled:cursor-not-allowed text-white py-4 rounded-lg font-semibold text-lg transition-colors text-sm sm:text-base flex items-center justify-center"
               >
-                Create Access Level & Sync to ZKBio
+                {loading.accessLevelCreation ? (
+                  <>
+                    <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
+                    Creating...
+                  </>
+                ) : (
+                  'Create Access Level & Sync to ZKBio'
+                )}
               </button>
             </div>
 
@@ -867,7 +883,22 @@ export default function BiometricAccessApp() {
             <div className="bg-slate-800 rounded-lg shadow-xl p-4 sm:p-6 border border-slate-700">
               <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Existing Access Levels</h2>
               
-              {accessLevels.length === 0 ? (
+              {loading.accessLevels ? (
+                <div className="space-y-4">
+                  {[...Array(3)].map((_, i) => (
+                    <div key={i} className="bg-slate-700/50 p-4 rounded-lg border border-slate-600 animate-pulse">
+                      <div className="flex justify-between items-start mb-3">
+                        <div className="flex-1">
+                          <div className="h-5 bg-slate-600 rounded w-1/3 mb-2"></div>
+                          <div className="h-4 bg-slate-600 rounded w-2/3"></div>
+                        </div>
+                        <div className="h-8 w-16 bg-slate-600 rounded"></div>
+                      </div>
+                      <div className="h-4 bg-slate-600 rounded w-1/4"></div>
+                    </div>
+                  ))}
+                </div>
+              ) : accessLevels.length === 0 ? (
                 <div className="text-center py-12 text-slate-400">
                   <Shield size={48} className="mx-auto mb-4 opacity-50" />
                   <p>No access levels configured yet</p>
@@ -942,6 +973,13 @@ export default function BiometricAccessApp() {
           </div>
         )}
       </div>
+
+      {/* Add User Modal */}
+      <AddUserModal
+        isOpen={showAddUserModal}
+        onClose={() => setShowAddUserModal(false)}
+        onUserAdded={handleUserAdded}
+      />
     </div>
   );
 }

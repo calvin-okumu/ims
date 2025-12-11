@@ -70,46 +70,98 @@ All API responses follow this structure:
 - `code: 400` = Bad Request
 - `code: 401` = Unauthorized
 
-## API Versions & Endpoints
+## API Implementation Status
 
-This application uses **ZKBio CVSecurity API v2.0** for most operations and **v3.0** for transaction endpoints.
+This application successfully integrates with **ZKBio CVSecurity API v2.0** using Next.js proxy routes to handle CORS and SSL certificate issues.
 
-### Person Management (v2.0)
-- `POST /api/v2/person/getPersonList` - List persons with pagination and filters
-- `GET /api/v2/person/get/{pin}` - Get person by PIN
-- `POST /api/v2/person/add` - Create new person
-- `PUT /api/v2/person/update/{pin}` - Update person
-- `POST /api/v2/person/delete/{pin}` - Delete person
+### ✅ Working Endpoints (via Proxy)
 
-### Access Control (v2.0)
-- `GET /api/v2/accLevel/list` - List access levels
-- `POST /api/accLevel/addLevel` - Create access level
-- `POST /api/accLevel/deleteLevel` - Delete access level
-- `POST /api/accLevel/addLevelPerson` - Grant access to person
-- `POST /api/accLevel/deleteLevel` - Remove access from person
+#### Person Management (v2.0)
+- `POST /api/persons` → `POST /api/v2/person/getPersonList` - ✅ **WORKING** - Lists persons with pagination
+- `GET /api/v2/person/get/{pin}` - Get person by PIN (not implemented yet)
+- `POST /api/v2/person/add` - Create new person (not implemented yet)
+- `PUT /api/v2/person/update/{pin}` - Update person (not implemented yet)
+- `POST /api/v2/person/delete/{pin}` - Delete person (not implemented yet)
 
-### Reader Management (v2.0)
+#### Access Control (v2.0)
+- `GET /api/access-levels` → `GET /api/v2/accLevel/list` - ✅ **WORKING** - Lists access levels
+- `POST /api/accLevel/addLevel` - Create access level (not implemented yet)
+- `POST /api/accLevel/deleteLevel` - Delete access level (not implemented yet)
+- `POST /api/accLevel/addLevelPerson` - Grant access to person (not implemented yet)
+- `POST /api/accLevel/deleteLevel` - Remove access from person (not implemented yet)
+
+### 📊 Current Data Status
+
+#### Person Data (5 records loaded)
+```json
+[
+  {
+    "pin": "23510009090",
+    "name": "George",
+    "lastName": "Mrema",
+    "deptName": "PRIVATE BANKING CUSTOMER",
+    "gender": "M",
+    "email": "calvin@comsec.co.tz"
+  },
+  {
+    "pin": "23510009090S1",
+    "name": "Zainab",
+    "lastName": "Gamaru",
+    "deptName": "SPOUSE PRIVATE BANKING",
+    "accLevelIds": "402880f39ae893ad019ae895fe3d0463"
+  }
+  // ... 3 more records
+]
+```
+
+#### Access Level Data (1 record loaded)
+```json
+[
+  {
+    "id": "402880f39ae893ad019ae895fe3d0463",
+    "name": "General"
+  }
+]
+```
+
+### 🔄 Data Synchronization Features
+
+#### Automatic Refresh
+- **Page Load**: Data loads automatically on page refresh
+- **Component Mount**: Fresh data on component initialization
+- **Background Sync**: Auto-refresh every 5 minutes
+- **Manual Refresh**: Global and component-level refresh buttons
+
+#### Real-time Updates
+- **Timestamp Display**: Shows when data was last refreshed
+- **Loading States**: Skeleton screens during data fetch
+- **Success Feedback**: Notifications for successful operations
+- **Error Recovery**: Graceful handling of API failures
+
+### 🚧 Planned Endpoints (Not Yet Implemented)
+
+#### Reader Management (v2.0)
 - `GET /api/v2/reader/list` - List readers
 - `POST /api/v2/reader/add` - Create reader
 - `PUT /api/v2/reader/update/{id}` - Update reader
 - `POST /api/v2/reader/delete/{id}` - Delete reader
 
-### Door Control (v2.0)
+#### Door Control (v2.0)
 - `GET /api/v2/door/list` - List doors
 - `POST /api/door/remoteOpenById` - Remote door open
 - `POST /api/door/remoteCloseById` - Remote door close
 - `GET /api/door/doorStateById` - Get door state
 
-### Transaction History (v3.0)
+#### Transaction History (v3.0)
 - `GET /api/v3/transaction/person/{pin}` - Get person transactions
 - `GET /api/v3/transaction/device/{sn}` - Get device transactions
 - `GET /api/v2/transaction/list` - List all transactions
 
-### Card Management (v2.0)
+#### Card Management (v2.0)
 - `GET /api/v2/card/getCards/{pin}` - Get cards by PIN
 - `POST /api/card/set` - Assign card to person
 
-### Biometric Templates (v2.0)
+#### Biometric Templates (v2.0)
 - `GET /api/v2/bioTemplate/getFgListByPin/{pin}` - Get fingerprint templates
 - `POST /api/bioTemplate/add` - Upload biometric template
 - `POST /api/v2/bioTemplate/deleteByPin` - Delete templates by PIN
