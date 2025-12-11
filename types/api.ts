@@ -7,8 +7,10 @@ export interface ApiResponse<T> {
 
 // Access Level Types
 export interface AccessLevel {
+  id?: string;
   LevelID?: number;
-  Name: string;
+  Name?: string;
+  name?: string;
   Description?: string;
   DoorIds?: number[];
   areaName?: string;
