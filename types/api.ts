@@ -133,6 +133,27 @@ export interface TransactionFilters {
   endDate?: string;
 }
 
+// Branch (Department) Types
+export interface Branch {
+  code: string;
+  name: string;
+  description?: string;
+  parentCode?: string;
+  level: number;
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface BranchHierarchy extends Branch {
+  children?: BranchHierarchy[];
+  fullPath: string;
+}
+
+export interface BranchFilters {
+  codes?: string;
+  parentCode?: string;
+}
+
 // Legacy interfaces for backward compatibility
 export interface User {
   id: number;

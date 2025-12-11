@@ -41,8 +41,32 @@ export const getPerson = async (pin: string): Promise<Person> => {
 };
 
 export const createPerson = async (person: PersonCreateRequest): Promise<Person> => {
-  const response = await apiClient.post('/api/v2/person/add', { person });
-  return response.data;
+  try {
+    // Use Next.js API proxy to avoid CORS issues
+    const response = await fetch('/api/persons', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(person)
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Handle ZKBio response format
+    if (data.code === 0) {
+      return data.data;
+    } else {
+      throw new Error(data.message || 'API Error');
+    }
+  } catch (error) {
+    console.error('Failed to create person:', error);
+    throw error;
+  }
 };
 
 export const updatePerson = async (pin: string, person: Partial<Person>): Promise<Person> => {

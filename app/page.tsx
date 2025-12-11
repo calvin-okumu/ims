@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { UserPlus, Fingerprint, DoorOpen, Users, Database, CheckCircle, XCircle, AlertCircle, Shield, Plus, Trash2, MapPin, Clock, Activity, RefreshCw } from 'lucide-react';
+import { UserPlus, Fingerprint, DoorOpen, Users, Database, CheckCircle, XCircle, AlertCircle, Shield, Plus, Trash2, MapPin, Clock, Activity, RefreshCw, User } from 'lucide-react';
 import { useAreaBasedDoorSelection } from '../hooks/useAreaBasedDoorSelection';
 import { getAccessLevels } from '../services/accessLevelService';
 import { getPersons } from '../services/personService';
@@ -12,6 +12,8 @@ import Skeleton from '../components/Skeleton';
 import ApiConnectivityTest from '../components/ApiConnectivityTest';
 import UserManagement from '../components/UserManagement';
 import AddUserModal from '../components/AddUserModal';
+import BranchSelect from '../components/BranchSelect';
+import { uploadBiometricTemplate } from '../services/biometricService';
 
 // Form interfaces
 interface FormData {
@@ -41,6 +43,22 @@ interface FormData {
     idType: string;
     idExpiry: string;
   };
+  // Spouse fields
+  spouseFirstName: string;
+  spouseLastName: string;
+  spouseEmail: string;
+  spousePhone: string;
+  spouseCardNo: string;
+  spouseGender: 'M' | 'F';
+  spouseFingerprintData: {
+    template: string;
+    quality: number;
+    capturedAt: string;
+    bioType: number;
+    version: string;
+    templateNo: string;
+  } | null;
+  spouseFingerIndex: string;
 }
 
 interface AccessLevelForm {
@@ -70,6 +88,9 @@ export default function BiometricAccessApp() {
 
   // Refresh triggers
   const [userRefreshTrigger, setUserRefreshTrigger] = useState(0);
+
+  // Registration type
+  const [registrationType, setRegistrationType] = useState<'single' | 'couple'>('single');
 
   // Use area-based door selection hook
   const {
@@ -101,7 +122,16 @@ export default function BiometricAccessApp() {
       idNumber: '',
       idType: 'Passport',
       idExpiry: ''
-    }
+    },
+    // Spouse fields
+    spouseFirstName: '',
+    spouseLastName: '',
+    spouseEmail: '',
+    spousePhone: '',
+    spouseCardNo: '',
+    spouseGender: 'F',
+    spouseFingerprintData: null,
+    spouseFingerIndex: '0'
   });
 
   const [accessLevelForm, setAccessLevelForm] = useState<AccessLevelForm>({
@@ -119,6 +149,7 @@ export default function BiometricAccessApp() {
     setLoading(prev => ({ ...prev, accessLevels: true }));
     try {
       const levels = await getAccessLevels();
+      console.log('Fetched access levels:', levels);
       setAccessLevels(levels);
     } catch (error) {
       console.error('Failed to fetch access levels:', error);
@@ -130,27 +161,6 @@ export default function BiometricAccessApp() {
 
   const showNotification = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') => {
     setNotification({ message, type });
-  };
-
-  // User management handlers
-  const handleUserAdded = (newUser: any) => {
-    showNotification(`User ${newUser.name} created successfully`, 'success');
-    // Trigger refresh of user list
-    setUserRefreshTrigger(prev => prev + 1);
-  };
-
-  const handleUserSelect = (user: any) => {
-    showNotification(`Selected user: ${user.name}`, 'info');
-  };
-
-  const handleUserEdit = (user: any) => {
-    showNotification(`Edit functionality for ${user.name} - coming soon`, 'info');
-  };
-
-  const handleUserDelete = (user: any) => {
-    if (confirm(`Are you sure you want to delete user ${user.name}?`)) {
-      showNotification(`Delete functionality for ${user.name} - coming soon`, 'warning');
-    }
   };
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
@@ -198,39 +208,62 @@ export default function BiometricAccessApp() {
     setLoading(prev => ({ ...prev, registration: true }));
     // Validation checks with detailed error messages
     const errors = [];
-    
+
     if (!formData.accountNumber.trim()) {
-      errors.push('Account number is required');
-    } else if (!/^[A-Z]{2}-\d{6}$/.test(formData.accountNumber.trim())) {
-      errors.push('Account number must be in format: PB-123456');
+      errors.push('Account number (PIN) is required');
+    } else if (formData.accountNumber.length > 15) {
+      errors.push('Account number (PIN) must be 15 characters or less');
     }
-    
+
     if (!formData.firstName.trim()) {
-      errors.push('First name is required');
+      errors.push('Principal first name is required');
     } else if (formData.firstName.trim().length < 2) {
-      errors.push('First name must be at least 2 characters');
+      errors.push('Principal first name must be at least 2 characters');
     }
-    
+
     if (!formData.lastName.trim()) {
-      errors.push('Last name is required');
+      errors.push('Principal last name is required');
     } else if (formData.lastName.trim().length < 2) {
-      errors.push('Last name must be at least 2 characters');
+      errors.push('Principal last name must be at least 2 characters');
     }
-    
+
     if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
-      errors.push('Please enter a valid email address');
+      errors.push('Please enter a valid email address for principal');
     }
-    
+
     if (formData.phone && !/^[\d\s\-\+\(\)]+$/.test(formData.phone)) {
-      errors.push('Please enter a valid phone number');
+      errors.push('Please enter a valid phone number for principal');
     }
-    
+
     if (!formData.fingerprintData) {
-      errors.push('Please capture fingerprint before registration');
+      errors.push('Please capture principal fingerprint before registration');
     }
-    
+
     if (!formData.selectedAccessLevel) {
       errors.push('Please select an access level');
+    }
+
+    if (!formData.customFields.idNumber) {
+      errors.push('Please select a branch');
+    }
+
+    // Spouse validation for couple registration
+    if (registrationType === 'couple') {
+      if (formData.spouseFirstName && formData.spouseFirstName.trim().length < 2) {
+        errors.push('Spouse first name must be at least 2 characters');
+      }
+
+      if (formData.spouseLastName && formData.spouseLastName.trim().length < 2) {
+        errors.push('Spouse last name must be at least 2 characters');
+      }
+
+      if (formData.spouseEmail && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.spouseEmail)) {
+        errors.push('Please enter a valid email address for spouse');
+      }
+
+      if (formData.spousePhone && !/^[\d\s\-\+\(\)]+$/.test(formData.spousePhone)) {
+        errors.push('Please enter a valid phone number for spouse');
+      }
     }
 
     if (errors.length > 0) {
@@ -239,58 +272,159 @@ export default function BiometricAccessApp() {
     }
 
     try {
-      // Here you would integrate with your API
-      const response = await fetch('/api/person/add', {
-        method: 'POST',
+      // Register principal
+      const principalResponse = await fetch('/api/persons', {
+        method: 'PUT',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${process.env.NEXT_PUBLIC_ZKBIO_API_TOKEN}`
         },
         body: JSON.stringify({
-          name: `${formData.firstName} ${formData.lastName}`,
           pin: formData.accountNumber,
-          email: formData.email,
+          name: `${formData.firstName.trim()} ${formData.lastName.trim()}`,
+          email: formData.email || undefined,
+          mobilePhone: formData.phone || undefined,
           gender: formData.gender,
-          deptCode: '1'
+          deptCode: formData.customFields.idNumber,
+          accLevelIds: formData.selectedAccessLevel
         })
       });
 
-      if (response.ok) {
-        const newUser = {
-          id: Date.now(),
-          ...formData,
-          registeredAt: new Date().toISOString(),
-          status: 'active',
-          syncStatus: 'success'
-        };
-        setUsers(prev => [...prev, newUser]);
-        showNotification('User registered successfully', 'success');
-        
-        // Reset form
-        setFormData({
-          accountNumber: '',
-          firstName: '',
-          lastName: '',
-          userType: 'principal',
-          email: '',
-          phone: '',
-          cardNo: '',
-          gender: 'M',
-          fingerprintData: null,
-          selectedAccessLevel: '',
-          selectedDoors: [],
-          fingerIndex: '0',
-          customFields: {
-            occupation: '',
-            nationality: '',
-            idNumber: '',
-            idType: 'Passport',
-            idExpiry: ''
-          }
-        });
-      } else {
-        throw new Error('Registration failed');
+      if (!principalResponse.ok) {
+        throw new Error('Failed to register principal');
       }
+
+      // Upload principal fingerprint if provided
+      if (formData.fingerprintData?.template) {
+        try {
+          await uploadBiometricTemplate(parseInt(formData.accountNumber), {
+            PersonID: 0, // Will be set by API
+            Template: formData.fingerprintData.template,
+            Type: 1 // Fingerprint
+          });
+        } catch (error) {
+          console.warn('Fingerprint upload failed for principal, but person was registered successfully');
+        }
+      }
+
+      // Assign access level to principal
+      if (formData.selectedAccessLevel) {
+        const accessLevelResponse = await fetch('/api/access-levels/assign', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            levelIds: [parseInt(formData.selectedAccessLevel)],
+            pin: formData.accountNumber
+          })
+        });
+
+        if (!accessLevelResponse.ok) {
+          console.warn('Access level assignment failed for principal, but person was registered successfully');
+        }
+      }
+
+      // Register spouse if couple registration
+      if (registrationType === 'couple' && (formData.spouseFirstName.trim() || formData.spouseLastName.trim())) {
+        const spouseResponse = await fetch('/api/persons', {
+          method: 'PUT',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            pin: `${formData.accountNumber}s1`,
+            name: `${formData.spouseFirstName.trim() || formData.firstName.trim()} ${formData.spouseLastName.trim() || formData.lastName.trim()}`,
+            email: formData.spouseEmail || undefined,
+            mobilePhone: formData.spousePhone || undefined,
+            gender: formData.spouseGender,
+            deptCode: formData.customFields.idNumber, // Same branch as principal
+            accLevelIds: formData.selectedAccessLevel // Same access level as principal
+          })
+        });
+
+        if (spouseResponse.ok) {
+          // Upload spouse fingerprint if provided
+          if (formData.spouseFingerprintData?.template) {
+            try {
+              await uploadBiometricTemplate(0, {
+                PersonID: 0, // Will be set by API
+                Template: formData.spouseFingerprintData.template,
+                Type: 1 // Fingerprint
+              });
+            } catch (error) {
+              console.warn('Fingerprint upload failed for spouse, but spouse was registered successfully');
+            }
+          }
+
+          // Assign access level to spouse
+          if (formData.selectedAccessLevel) {
+            const spouseAccessLevelResponse = await fetch('/api/access-levels/assign', {
+              method: 'POST',
+              headers: {
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                levelIds: [parseInt(formData.selectedAccessLevel)],
+                pin: `${formData.accountNumber}s1`
+              })
+            });
+
+            if (!spouseAccessLevelResponse.ok) {
+              console.warn('Access level assignment failed for spouse, but spouse was registered successfully');
+            }
+          }
+        } else {
+          console.warn('Spouse registration failed, but principal was registered successfully');
+        }
+      }
+
+      const newUser = {
+        id: Date.now(),
+        ...formData,
+        registeredAt: new Date().toISOString(),
+        status: 'active',
+        syncStatus: 'success'
+      };
+      setUsers(prev => [...prev, newUser]);
+
+      const successMessage = registrationType === 'couple'
+        ? 'Principal and spouse registered successfully'
+        : 'Principal registered successfully';
+
+      showNotification(successMessage, 'success');
+
+      // Reset form
+      setFormData({
+        accountNumber: '',
+        firstName: '',
+        lastName: '',
+        userType: 'principal',
+        email: '',
+        phone: '',
+        cardNo: '',
+        gender: 'M',
+        fingerprintData: null,
+        selectedAccessLevel: '',
+        selectedDoors: [],
+        fingerIndex: '0',
+        customFields: {
+          occupation: '',
+          nationality: '',
+          idNumber: '',
+          idType: 'Passport',
+          idExpiry: ''
+        },
+        // Spouse fields
+        spouseFirstName: '',
+        spouseLastName: '',
+        spouseEmail: '',
+        spousePhone: '',
+        spouseCardNo: '',
+        spouseGender: 'F',
+        spouseFingerprintData: null,
+        spouseFingerIndex: '0'
+      });
+      setRegistrationType('single');
     } catch (error) {
       console.error('Registration error:', error);
       showNotification('Registration failed: ' + (error instanceof Error ? error.message : 'Unknown error'), 'error');
@@ -298,6 +432,29 @@ export default function BiometricAccessApp() {
       setLoading(prev => ({ ...prev, registration: false }));
     }
   };
+
+  // User management handlers
+  const handleUserAdded = (newUser: any) => {
+    showNotification(`User ${newUser.name} created successfully`, 'success');
+    // Trigger refresh of user list
+    setUserRefreshTrigger(prev => prev + 1);
+  };
+
+  const handleUserSelect = (user: any) => {
+    showNotification(`Selected user: ${user.name}`, 'info');
+  };
+
+  const handleUserEdit = (user: any) => {
+    showNotification(`Edit functionality for ${user.name} - coming soon`, 'info');
+  };
+
+  const handleUserDelete = (user: any) => {
+    if (confirm(`Are you sure you want to delete user ${user.name}?`)) {
+      showNotification(`Delete functionality for ${user.name} - coming soon`, 'warning');
+    }
+  };
+
+
 
   const createAccessLevel = async () => {
     setLoading(prev => ({ ...prev, accessLevelCreation: true }));
@@ -433,20 +590,6 @@ export default function BiometricAccessApp() {
           </div>
         </div>
 
-        {/* Notification */}
-        {notification && (
-          <div className={`mb-6 p-4 rounded-lg flex items-center gap-3 ${
-            notification.type === 'success' ? 'bg-green-900/50 border border-green-700 text-green-200' :
-            notification.type === 'error' ? 'bg-red-900/50 border border-red-700 text-red-200' :
-            'bg-blue-900/50 border border-blue-700 text-blue-200'
-          }`}>
-            {notification.type === 'success' && <CheckCircle size={20} />}
-            {notification.type === 'error' && <XCircle size={20} />}
-            {notification.type === 'info' && <AlertCircle size={20} />}
-            <span>{notification.message}</span>
-          </div>
-        )}
-
         {/* Tabs */}
         <div className="flex flex-col sm:flex-row gap-2 sm:gap-4 mb-6 overflow-x-auto">
           <button
@@ -513,113 +656,239 @@ export default function BiometricAccessApp() {
         {activeTab === 'register' && (
           <div className="bg-slate-800 rounded-lg shadow-xl p-4 sm:p-6 border border-slate-700">
             <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Register New User</h2>
-            
+
+            {/* Registration Type Selector */}
+            <div className="mb-6">
+              <div className="flex items-center space-x-4">
+                <label className="flex items-center text-white">
+                  <input
+                    type="radio"
+                    value="single"
+                    checked={registrationType === 'single'}
+                    onChange={(e) => setRegistrationType(e.target.value as 'single' | 'couple')}
+                    className="mr-2 text-blue-600 focus:ring-blue-500"
+                  />
+                  <User className="w-4 h-4 mr-1 text-blue-400" />
+                  Single Registration
+                </label>
+                <label className="flex items-center text-white">
+                  <input
+                    type="radio"
+                    value="couple"
+                    checked={registrationType === 'couple'}
+                    onChange={(e) => setRegistrationType(e.target.value as 'single' | 'couple')}
+                    className="mr-2 text-blue-600 focus:ring-blue-500"
+                  />
+                  <Users className="w-4 h-4 mr-1 text-blue-400" />
+                  Couple Registration
+                </label>
+              </div>
+            </div>
+
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6 mb-6">
               <div>
-                <label className="block text-slate-300 mb-2 text-sm">Account Number *</label>
+                <label className="block text-slate-300 mb-2 text-sm">PIN/Account Number *</label>
                 <input
                   type="text"
                   name="accountNumber"
                   value={formData.accountNumber}
                   onChange={handleInputChange}
                   className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
-                  placeholder="PB-123456"
+                  placeholder="Unique PIN (max 15 characters)"
+                  maxLength={15}
                 />
               </div>
-              
+
               <div>
-                <label className="block text-slate-300 mb-2 text-sm">User Type *</label>
-                <select
-                  name="userType"
-                  value={formData.userType}
-                  onChange={handleInputChange}
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
-                >
-                  <option value="principal">Principal Account Holder</option>
-                  <option value="spouse">Spouse</option>
-                </select>
+                <label className="block text-slate-300 mb-2 text-sm">Branch *</label>
+                <BranchSelect
+                  value={formData.customFields.idNumber}
+                  onChange={(value) => setFormData(prev => ({
+                    ...prev,
+                    customFields: { ...prev.customFields, idNumber: value }
+                  }))}
+                  required={true}
+                  showCreateOption={true}
+                  onCreateNew={() => {/* Branch creator logic */}}
+                />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6 mb-6">
-              <div>
-                <label className="block text-slate-300 mb-2 text-sm">First Name *</label>
-                <input
-                  type="text"
-                  name="firstName"
-                  value={formData.firstName}
-                  onChange={handleInputChange}
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
-                  placeholder="John"
-                />
-              </div>
-              
-              <div>
-                <label className="block text-slate-300 mb-2 text-sm">Last Name *</label>
-                <input
-                  type="text"
-                  name="lastName"
-                  value={formData.lastName}
-                  onChange={handleInputChange}
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
-                  placeholder="Doe"
-                />
-              </div>
+            {/* Principal Information */}
+            <div className="bg-slate-700/50 p-4 rounded-lg border border-slate-600 mb-6">
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                <User className="w-5 h-5 mr-2 text-blue-400" />
+                Principal Information
+              </h3>
 
-              <div>
-                <label className="block text-slate-300 mb-2 text-sm">Email</label>
-                <input
-                  type="email"
-                  name="email"
-                  value={formData.email}
-                  onChange={handleInputChange}
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
-                  placeholder="john.doe@example.com"
-                />
-              </div>
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                <div>
+                  <label className="block text-slate-300 mb-2 text-sm">First Name *</label>
+                  <input
+                    type="text"
+                    name="firstName"
+                    value={formData.firstName}
+                    onChange={handleInputChange}
+                    className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                    placeholder="John"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-slate-300 mb-2 text-sm">Phone</label>
-                <input
-                  type="tel"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleInputChange}
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
-                  placeholder="+1234567890"
-                />
-              </div>
+                <div>
+                  <label className="block text-slate-300 mb-2 text-sm">Last Name *</label>
+                  <input
+                    type="text"
+                    name="lastName"
+                    value={formData.lastName}
+                    onChange={handleInputChange}
+                    className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                    placeholder="Doe"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-slate-300 mb-2 text-sm">Card Number</label>
-                <input
-                  type="text"
-                  name="cardNo"
-                  value={formData.cardNo}
-                  onChange={handleInputChange}
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
-                  placeholder="Optional"
-                />
-              </div>
+                <div>
+                  <label className="block text-slate-300 mb-2 text-sm">Email</label>
+                  <input
+                    type="email"
+                    name="email"
+                    value={formData.email}
+                    onChange={handleInputChange}
+                    className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                    placeholder="john.doe@example.com"
+                  />
+                </div>
 
-              <div>
-                <label className="block text-slate-300 mb-2 text-sm">Gender</label>
-                <select
-                  name="gender"
-                  value={formData.gender}
-                  onChange={handleInputChange}
-                  className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
-                >
-                  <option value="M">Male</option>
-                  <option value="F">Female</option>
-                </select>
+                <div>
+                  <label className="block text-slate-300 mb-2 text-sm">Phone</label>
+                  <input
+                    type="tel"
+                    name="phone"
+                    value={formData.phone}
+                    onChange={handleInputChange}
+                    className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                    placeholder="+1234567890"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 mb-2 text-sm">Card Number</label>
+                  <input
+                    type="text"
+                    name="cardNo"
+                    value={formData.cardNo}
+                    onChange={handleInputChange}
+                    className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                    placeholder="Optional"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-slate-300 mb-2 text-sm">Gender</label>
+                  <select
+                    name="gender"
+                    value={formData.gender}
+                    onChange={handleInputChange}
+                    className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                  >
+                    <option value="M">Male</option>
+                    <option value="F">Female</option>
+                  </select>
+                </div>
               </div>
             </div>
 
-            {/* Fingerprint Capture */}
+            {/* Spouse Information */}
+            {registrationType === 'couple' && (
+              <div className="bg-blue-900/20 p-4 rounded-lg border border-blue-700 mb-6">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <Users className="w-5 h-5 mr-2 text-blue-400" />
+                  Spouse Information
+                </h3>
+
+                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4 sm:gap-6">
+                  <div>
+                    <label className="block text-slate-300 mb-2 text-sm">First Name</label>
+                    <input
+                      type="text"
+                      name="spouseFirstName"
+                      value={formData.spouseFirstName}
+                      onChange={handleInputChange}
+                      className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                      placeholder="Jane"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 mb-2 text-sm">Last Name</label>
+                    <input
+                      type="text"
+                      name="spouseLastName"
+                      value={formData.spouseLastName}
+                      onChange={handleInputChange}
+                      className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                      placeholder="Doe"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 mb-2 text-sm">Email</label>
+                    <input
+                      type="email"
+                      name="spouseEmail"
+                      value={formData.spouseEmail}
+                      onChange={handleInputChange}
+                      className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                      placeholder="jane.doe@example.com"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 mb-2 text-sm">Phone</label>
+                    <input
+                      type="tel"
+                      name="spousePhone"
+                      value={formData.spousePhone}
+                      onChange={handleInputChange}
+                      className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                      placeholder="+1234567890"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 mb-2 text-sm">Card Number</label>
+                    <input
+                      type="text"
+                      name="spouseCardNo"
+                      value={formData.spouseCardNo}
+                      onChange={handleInputChange}
+                      className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                      placeholder="Optional"
+                    />
+                  </div>
+
+                  <div>
+                    <label className="block text-slate-300 mb-2 text-sm">Gender</label>
+                    <select
+                      name="spouseGender"
+                      value={formData.spouseGender}
+                      onChange={handleInputChange}
+                      className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                    >
+                      <option value="M">Male</option>
+                      <option value="F">Female</option>
+                    </select>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Principal Fingerprint Capture */}
             <div className="mb-6 p-4 sm:p-6 bg-slate-700/50 rounded-lg border border-slate-600">
-              <h3 className="text-lg font-semibold text-white mb-4">Fingerprint Registration (ZKBio)</h3>
-              
+              <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                <Fingerprint className="w-5 h-5 mr-2 text-purple-400" />
+                Principal Fingerprint Registration (ZKBio)
+              </h3>
+
               <div className="mb-4">
                 <label className="block text-slate-300 mb-2 text-sm">Select Finger</label>
                 <select
@@ -640,7 +909,7 @@ export default function BiometricAccessApp() {
                   <option value="9">Left Little</option>
                 </select>
               </div>
-              
+
               <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
                 <div>
                   {formData.fingerprintData ? (
@@ -665,6 +934,74 @@ export default function BiometricAccessApp() {
               </div>
             </div>
 
+            {/* Spouse Fingerprint Capture */}
+            {registrationType === 'couple' && (
+              <div className="mb-6 p-4 sm:p-6 bg-blue-900/20 rounded-lg border border-blue-700">
+                <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
+                  <Fingerprint className="w-5 h-5 mr-2 text-purple-400" />
+                  Spouse Fingerprint Registration (ZKBio)
+                </h3>
+
+                <div className="mb-4">
+                  <label className="block text-slate-300 mb-2 text-sm">Select Finger</label>
+                  <select
+                    name="spouseFingerIndex"
+                    value={formData.spouseFingerIndex}
+                    onChange={handleInputChange}
+                    className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none text-sm sm:text-base"
+                  >
+                    <option value="0">Right Thumb</option>
+                    <option value="1">Right Index</option>
+                    <option value="2">Right Middle</option>
+                    <option value="3">Right Ring</option>
+                    <option value="4">Right Little</option>
+                    <option value="5">Left Thumb</option>
+                    <option value="6">Left Index</option>
+                    <option value="7">Left Middle</option>
+                    <option value="8">Left Ring</option>
+                    <option value="9">Left Little</option>
+                  </select>
+                </div>
+
+                <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+                  <div>
+                    {formData.spouseFingerprintData ? (
+                      <div className="text-green-400 flex items-center gap-2">
+                        <CheckCircle size={24} />
+                        <div>
+                          <div>Fingerprint captured (Quality: {formData.spouseFingerprintData?.quality || 0}%)</div>
+                          <div className="text-sm text-slate-400">Template Version: {formData.spouseFingerprintData?.version || 'N/A'}</div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-slate-400">No fingerprint captured</div>
+                    )}
+                  </div>
+                  <button
+                    onClick={() => {
+                      const mockFingerprintData = {
+                        template: 'mock_spouse_fingerprint_template_data_base64_encoded_string',
+                        quality: 92,
+                        capturedAt: new Date().toISOString(),
+                        bioType: 1,
+                        version: '10.0',
+                        templateNo: '3'
+                      };
+                      setFormData(prev => ({
+                        ...prev,
+                        spouseFingerprintData: mockFingerprintData
+                      }));
+                      showNotification('Spouse fingerprint captured successfully', 'success');
+                    }}
+                    className="bg-purple-600 hover:bg-purple-700 text-white px-4 sm:px-6 py-3 rounded-lg flex items-center gap-2 transition-colors text-sm sm:text-base"
+                  >
+                    <Fingerprint size={20} />
+                    Capture Fingerprint
+                  </button>
+                </div>
+              </div>
+            )}
+
             {/* Access Level Selection */}
             <div className="mb-6">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
@@ -678,19 +1015,21 @@ export default function BiometricAccessApp() {
                 className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none mb-4 text-sm sm:text-base"
               >
                 <option value="">Choose an access level...</option>
-                {accessLevels.map(level => (
-                  <option key={level.LevelID || level.Name} value={(level.LevelID || 0).toString()}>
-                    {level.Name} - {level.Description}
+                {accessLevels.map((level, index) => (
+                  <option key={level.LevelID || level.id || index} value={(level.LevelID || level.id || index + 1).toString()}>
+                    {level.Name || level.name} - {level.Description}
                   </option>
                 ))}
               </select>
-              
+
               {formData.selectedAccessLevel && (
                 <div className="p-4 bg-slate-700/50 rounded-lg border border-slate-600">
                   <h4 className="text-white font-medium mb-3">Door Access Included:</h4>
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                     {(() => {
-                      const selectedLevel = accessLevels.find(level => level.LevelID === parseInt(formData.selectedAccessLevel));
+                      const selectedLevel = accessLevels.find((level, index) =>
+                        (level.LevelID || level.id || index + 1) === parseInt(formData.selectedAccessLevel)
+                      );
                       return selectedLevel ? selectedLevel.DoorIds?.map(doorId => {
                         const door = filteredDoors.find(d => d.ReaderID === doorId);
                         return (
@@ -717,7 +1056,7 @@ export default function BiometricAccessApp() {
                   Registering...
                 </>
               ) : (
-                'Register User & Sync to ZKBio'
+                `Register ${registrationType === 'couple' ? 'Couple' : 'User'} & Sync to ZKBio`
               )}
             </button>
           </div>

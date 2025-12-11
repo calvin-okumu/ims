@@ -5,15 +5,18 @@ import { X, User, Mail, Phone, Building, Hash, Save, Loader2 } from 'lucide-reac
 import { createPerson } from '../services/personService';
 import { PersonCreateRequest } from '../types/api';
 import { useFormValidation, commonValidationRules } from '../hooks/useFormValidation';
+import BranchSelect from './BranchSelect';
+import BranchCreator from './BranchCreator';
 
 interface AddUserModalProps {
   isOpen: boolean;
   onClose: () => void;
-  onUserAdded: (user: any) => void;
+  onUserAdded: (user: PersonCreateRequest) => void;
 }
 
 const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onUserAdded }) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
+  const [showBranchCreator, setShowBranchCreator] = useState(false);
 
   const validationRules = {
     pin: {
@@ -31,6 +34,8 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onUserAdde
     deptCode: { required: false, maxLength: 50 }
   };
 
+  const [selectedBranch, setSelectedBranch] = useState('');
+
   const {
     values,
     errors,
@@ -46,7 +51,7 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onUserAdde
       name: '',
       email: '',
       mobilePhone: '',
-      deptCode: ''
+      deptCode: selectedBranch
     },
     validationRules
   );
@@ -54,9 +59,14 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onUserAdde
   const handleFormSubmit = async (formValues: PersonCreateRequest) => {
     setIsSubmitting(true);
     try {
-      const newUser = await createPerson(formValues);
+      const userData = {
+        ...formValues,
+        deptCode: selectedBranch
+      };
+      const newUser = await createPerson(userData);
       onUserAdded(newUser);
       resetForm();
+      setSelectedBranch('');
       onClose();
     } catch (error) {
       console.error('Failed to create user:', error);
@@ -221,32 +231,19 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onUserAdde
                 )}
               </div>
 
-              {/* Department Field */}
-              <div>
-                <label htmlFor="deptCode" className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
-                </label>
-                <div className="relative">
-                  <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                    <Building className="h-5 w-5 text-gray-400" />
-                  </div>
-                  <input
-                    type="text"
-                    id="deptCode"
-                    name="deptCode"
-                    value={values.deptCode}
-                    onChange={handleChange}
-                    onBlur={handleBlur}
-                    className={`block w-full pl-10 pr-3 py-2 border rounded-md shadow-sm focus:ring-blue-500 focus:border-blue-500 sm:text-sm ${
-                      errors.deptCode && touched.deptCode ? 'border-red-300' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter department code"
-                  />
-                </div>
-                {errors.deptCode && touched.deptCode && (
-                  <p className="mt-1 text-sm text-red-600">{errors.deptCode}</p>
-                )}
-              </div>
+               {/* Branch Field */}
+               <div>
+                 <label className="block text-sm font-medium text-gray-700 mb-1">
+                   Branch
+                 </label>
+                 <BranchSelect
+                   value={selectedBranch}
+                   onChange={setSelectedBranch}
+                   showCreateOption={true}
+                   onCreateNew={() => setShowBranchCreator(true)}
+                   placeholder="Select branch for user"
+                 />
+               </div>
             </form>
           </div>
 
@@ -280,6 +277,16 @@ const AddUserModal: React.FC<AddUserModalProps> = ({ isOpen, onClose, onUserAdde
           </div>
         </div>
       </div>
+
+      {/* Branch Creator Modal */}
+      <BranchCreator
+        isOpen={showBranchCreator}
+        onClose={() => setShowBranchCreator(false)}
+        onBranchCreated={(branch) => {
+          setSelectedBranch(branch.code);
+          setShowBranchCreator(false);
+        }}
+      />
     </div>
   );
 };

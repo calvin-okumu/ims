@@ -4,6 +4,7 @@ import React, { useState, useEffect } from 'react';
 import { Search, Plus, Edit, Trash2, Users, UserCheck, UserX, Filter, Download, RefreshCw, Shield } from 'lucide-react';
 import { getPersons } from '../services/personService';
 import { getAccessLevels } from '../services/accessLevelService';
+import { getBranches, BranchHierarchy } from '../services/branchService';
 import { Person, AccessLevel } from '../types/api';
 import { TableSkeleton } from './Skeleton';
 
@@ -13,6 +14,7 @@ interface UserManagementProps {
   onUserDelete?: (user: Person) => void;
   onAddUser?: () => void;
   refreshTrigger?: number; // Prop to trigger refresh from parent
+  onUserAdded?: (user: Person) => void;
 }
 
 const UserManagement: React.FC<UserManagementProps> = ({
@@ -25,6 +27,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
   const [users, setUsers] = useState<Person[]>([]);
   const [filteredUsers, setFilteredUsers] = useState<Person[]>([]);
   const [accessLevels, setAccessLevels] = useState<AccessLevel[]>([]);
+  const [branches, setBranches] = useState<BranchHierarchy[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
@@ -80,7 +83,8 @@ const UserManagement: React.FC<UserManagementProps> = ({
   const refreshAllData = async () => {
     await Promise.all([
       fetchUsers(1, true),
-      fetchAccessLevels()
+      fetchAccessLevels(),
+      fetchBranches()
     ]);
     setSelectedUsers(new Set()); // Clear selections on refresh
     setLastRefresh(Date.now());
@@ -96,16 +100,45 @@ const UserManagement: React.FC<UserManagementProps> = ({
     }
   };
 
+  // Fetch branches
+  const fetchBranches = async () => {
+    try {
+      const branchData = await getBranches();
+      setBranches(branchData);
+    } catch (error) {
+      console.error('Failed to fetch branches:', error);
+    }
+  };
+
   // Get access level name by ID
   const getAccessLevelName = (levelId: string) => {
     const level = accessLevels.find(al => al.id === levelId);
     return level ? level.name : levelId;
   };
 
+  // Get branch name by code
+  const getBranchName = (deptCode: string) => {
+    // Flatten branches for lookup
+    const flattenedBranches: BranchHierarchy[] = [];
+    const flatten = (branchList: BranchHierarchy[]) => {
+      branchList.forEach(branch => {
+        flattenedBranches.push(branch);
+        if (branch.children) {
+          flatten(branch.children);
+        }
+      });
+    };
+    flatten(branches);
+
+    const branch = flattenedBranches.find(b => b.code === deptCode);
+    return branch ? branch.fullPath : deptCode || 'N/A';
+  };
+
   // Initial data load
   useEffect(() => {
     fetchUsers();
     fetchAccessLevels();
+    fetchBranches();
     setLastRefresh(Date.now());
   }, []);
 
@@ -169,8 +202,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
         user.email || '',
         user.mobilePhone || '',
         user.deptCode || '',
-        user.deptCode === '2' ? 'Private Banking Customer' :
-        user.deptCode === '3' ? 'Spouse Private Banking' : 'Other',
+        `"${getBranchName(user.deptCode || '')}"`,
         user.accLevelIds ? getAccessLevelName(user.accLevelIds) : 'No Access',
         user.cardNo || '',
         'Active'
@@ -250,7 +282,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
               <Filter className="w-4 h-4 text-gray-400" />
               <select
                 value={statusFilter}
-                onChange={(e) => setStatusFilter(e.target.value as any)}
+                onChange={(e) => setStatusFilter(e.target.value as 'all' | 'active' | 'inactive')}
                 className="border border-gray-300 rounded-md px-3 py-2 focus:ring-blue-500 focus:border-blue-500"
               >
                 <option value="all">All Status</option>
@@ -354,17 +386,16 @@ const UserManagement: React.FC<UserManagementProps> = ({
                       )}
                     </div>
                   </td>
-                  <td className="px-4 py-4 whitespace-nowrap">
-                    <div className="text-sm text-gray-900">
-                      <div className="font-medium text-xs">{user.deptCode || 'N/A'}</div>
-                      {user.deptCode && (
-                        <div className="text-xs text-gray-500">
-                          {user.deptCode === '2' ? 'Private' :
-                           user.deptCode === '3' ? 'Spouse' : 'Other'}
-                        </div>
-                      )}
-                    </div>
-                  </td>
+                   <td className="px-4 py-4 whitespace-nowrap">
+                     <div className="text-sm text-gray-900">
+                       <div className="font-medium text-xs">{getBranchName(user.deptCode || '')}</div>
+                       {user.deptCode && (
+                         <div className="text-xs text-gray-500">
+                           Code: {user.deptCode}
+                         </div>
+                       )}
+                     </div>
+                   </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     {user.accLevelIds ? (
                       <span className="inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">

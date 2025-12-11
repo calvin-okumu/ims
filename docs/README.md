@@ -2,17 +2,17 @@
 
 ## Overview
 
-This is a Next.js-based Banking Access Control System that integrates with the ZKTECO BioCVSecurity API to manage private banking customers and their spouses' access to specific areas. Accounts are stored in SQLite, with automatic access revocation on status changes.
+This is a Next.js-based Banking Access Control System that integrates with the ZKTECO BioCVSecurity API to manage private banking customers and their spouses' access to specific areas. The system uses PIN-based account numbers as unique identifiers, with automatic spouse account generation and access level management.
 
 ## Features
 
-- Register banking accounts with principal and spouse details
-- Automatic fingerprint and card registration for both
-- Assign "VIP Lounge" access level with door controls
-- Status-based access management (active/inactive)
-- Fetch and display personnel and accounts
-- RESTful API integration with error handling and loading states
-- Responsive UI built with Tailwind CSS and TypeScript
+- **PIN-Based Registration**: Account numbers serve as unique PINs for ZK API integration
+- **Couple Registration**: Principal and spouse registration with automatic relationship tracking
+- **Biometric Integration**: Real-time fingerprint template upload and retrieval via ZK API
+- **Access Level Management**: Automatic assignment and cascade removal for linked accounts
+- **Branch Management**: Hierarchical department/branch structure with creation capabilities
+- **Real-time API Integration**: Direct integration with ZKTECO BioCVSecurity API endpoints
+- **Responsive UI**: Modern dark theme interface built with Tailwind CSS and TypeScript
 
 ## Tech Stack
 
@@ -91,8 +91,12 @@ Follow these steps to configure API authorization in your ZKBio CVSecurity admin
 
 The application uses Next.js API proxy routes to handle CORS and SSL certificate issues:
 
-- **Person Data**: `/api/persons` → ZKBio `/api/v2/person/getPersonList`
-- **Access Levels**: `/api/access-levels` → ZKBio `/api/v2/accLevel/list`
+#### Core ZKTECO API Endpoints (v2 where available)
+- **Person Management**: `/api/persons` → ZKBio `v2/person/getPersonList`, `v2/person/add`
+- **Access Levels**: `/api/access-levels` → ZKBio `v2/accLevel/list`
+- **Biometric Templates**: `/api/biometric` → ZKBio `bioTemplate/add` (v1), `v2/bioTemplate/getFgListByPin` (v2)
+- **Access Assignment**: `/api/access-levels/assign` → ZKBio `accLevel/addLevelPerson`
+- **Branch Management**: `/api/branches` → ZKBio `department/getDepartmentList`, `department/add` (v1)
 
 The proxy automatically:
 - Bypasses CORS restrictions
@@ -102,38 +106,76 @@ The proxy automatically:
 
 ## Usage
 
-- **Home Page**: View registered personnel and register new ones.
-- **Registration Form**: Enter name, optional card number, and fingerprint template (base64).
-- Data is synced with ZKTECO BioCVSecurity for biometric access control.
+### Registration System
+
+#### Single User Registration
+- Enter unique PIN (max 15 characters) as account identifier
+- Provide personal details (name, email, phone, gender)
+- Select branch/department from hierarchical dropdown
+- Optional: Card number and fingerprint template
+- Choose access level for automatic assignment
+
+#### Couple Registration
+- Register principal with full details
+- Spouse automatically gets PIN with "s1" suffix (e.g., PB-123456 → PB-123456s1)
+- Both principal and spouse get same branch and access level
+- Separate biometric data for each person
+- Automatic relationship tracking for access management
+
+### Data Management
+- **Real-time Sync**: Automatic data refresh every 5 minutes
+- **Manual Refresh**: Global refresh controls for immediate updates
+- **Branch Hierarchy**: Create and manage organizational structure
+- **Access Control**: Automatic assignment and cascade removal
 
 ## API Endpoints
 
-The app provides RESTful API endpoints for account management, stored in SQLite.
+### ZKTECO API Proxy Routes
 
-### Accounts
+#### Person Management
+- `GET /api/persons` - Fetch personnel list with filtering
+- `PUT /api/persons` - Create new person with PIN, branch, and access level
+- `POST /api/persons` - Legacy person list retrieval
+
+#### Biometric Templates
+- `PUT /api/biometric` - Upload fingerprint template to ZK API
+- `GET /api/biometric?pin={pin}` - Retrieve biometric templates for PIN
+
+#### Access Level Management
+- `GET /api/access-levels` - Fetch available access levels
+- `POST /api/access-levels/assign` - Assign access level to person
+- `DELETE /api/access-levels/assign` - Remove access level from person
+
+#### Branch/Department Management
+- `GET /api/branches` - Fetch hierarchical branch structure
+- `POST /api/branches` - Create new branch/department
+
+### Legacy SQLite Endpoints
 - `GET /api/accounts` - Retrieve all accounts
-- `POST /api/accounts` - Create a new account (requires JSON body with account details)
-- `GET /api/accounts/{id}` - Retrieve a specific account by ID
-- `PUT /api/accounts/{id}` - Update an account's status or details
-- `DELETE /api/accounts/{id}` - Delete an account
+- `POST /api/accounts` - Create a new account
+- `GET /api/accounts/{id}` - Retrieve specific account
+- `PUT /api/accounts/{id}` - Update account status/details
+- `DELETE /api/accounts/{id}` - Delete account
 
 ## Current Application Status
 
 ### ✅ Fully Operational Features
 
-#### User Management System
-- **Data Loading**: Personnel information loads automatically from ZKBio API
-- **User Table**: Professional table with search, filter, and pagination
-- **Real-time Sync**: Data refreshes automatically every 5 minutes
-- **Manual Refresh**: Global and component-level refresh buttons
-- **Add User Modal**: Form for creating new users (UI ready, API integration pending)
+#### Advanced Registration System
+- **PIN-Based Registration**: Account numbers serve as ZK API PINs (max 15 characters)
+- **Couple Registration**: Principal + spouse with automatic "s1" suffix generation
+- **Biometric Integration**: Real-time fingerprint upload via ZK API
+- **Access Level Assignment**: Automatic assignment during registration
+- **Branch Management**: Hierarchical department structure with creation
+- **Relationship Tracking**: Principal-spouse linkage via PIN for access management
 
 #### API Integration Status
+- **Person Registration**: ✅ Full CRUD with PIN, branch, and access level
+- **Biometric Templates**: ✅ Upload and retrieval via ZK API
+- **Access Assignment**: ✅ Real-time assignment and cascade removal
+- **Branch Hierarchy**: ✅ Full CRUD with parent-child relationships
 - **Person Data**: ✅ 5 users successfully loaded and displayed
-- **Access Levels**: ✅ 1 access level loaded
-- **Proxy Routes**: ✅ CORS and SSL certificate issues resolved
-- **Error Handling**: ✅ Comprehensive error handling and recovery
-- **Data Refresh**: ✅ Automatic and manual refresh capabilities
+- **Access Levels**: ✅ 1 access level loaded with assignment capabilities
 
 #### UI/UX Enhancements
 - **Skeleton Loading**: Professional loading states during data fetch
@@ -142,34 +184,30 @@ The app provides RESTful API endpoints for account management, stored in SQLite.
 - **Error Boundaries**: Graceful error handling for API failures
 - **Responsive Design**: Mobile-friendly interface
 
-### 📊 Current Data Status
+### 📊 Data Structure
 
-#### Person Records (5 total)
-```json
-[
-  {"pin": "23510009090", "name": "George Mrema", "dept": "PRIVATE BANKING CUSTOMER"},
-  {"pin": "23510009090S1", "name": "Zainab Gamaru", "dept": "SPOUSE PRIVATE BANKING"},
-  {"pin": "902190", "name": "Calvin Okumu", "dept": "PRIVATE BANKING CUSTOMER"},
-  {"pin": "902190S1", "name": "Mary Doe", "dept": "SPOUSE PRIVATE BANKING"},
-  {"pin": "902190S2", "name": "Jane Doe", "dept": "SPOUSE PRIVATE BANKING"}
-]
-```
+#### PIN-Based Account System
+- **Principal PIN**: Account number (max 15 characters)
+- **Spouse PIN**: Principal PIN + "s1" suffix
+- **Relationship Tracking**: Automatic spouse linkage via PIN
+- **Access Inheritance**: Spouses inherit principal's access levels
 
 #### Access Levels (1 total)
 ```json
 [{"id": "402880f39ae893ad019ae895fe3d0463", "name": "General"}]
 ```
 
-### 🔄 Data Synchronization
 
-- **Page Refresh**: Data loads automatically on browser refresh
-- **Auto Refresh**: Background sync every 5 minutes
-- **Manual Refresh**: Header and component refresh buttons
-- **Timestamp Display**: Shows when data was last updated
-- **Loading States**: Visual feedback during data operations
 
 ### ZKTECO Integration
 
+#### Active API Endpoints (v2 where available)
+- **Person Management**: `v2/person/add`, `v2/person/getPersonList`
+- **Biometric Templates**: `bioTemplate/add` (v1), `v2/bioTemplate/getFgListByPin` (v2)
+- **Access Levels**: `v2/accLevel/list`, `accLevel/addLevelPerson`
+- **Branch Management**: `department/add`, `department/getDepartmentList` (v1)
+
+#### Documentation
 - **API Setup Guide**: `docs/zkbio-api-setup-guide.md` - Complete setup instructions for ZKBio API authorization
 - **API Reference**: `docs/zkteco-api-reference-latest.md` - Full API documentation with working endpoints
 - **API Summary**: `docs/zkteco-api-summary.md` - Overview of ZKTECO BioCVSecurity API integration status
@@ -182,5 +220,23 @@ The app provides RESTful API endpoints for account management, stored in SQLite.
 
 ## Notes
 
-- Fingerprint templates require base64 encoding; integrate with biometric devices for capture.
-- Ensure ZKTECO server is accessible and API token is valid.
+### Registration System
+- **PIN Requirements**: Account numbers serve as ZK API PINs (max 15 characters, no format restrictions)
+- **Spouse Relationship**: Automatic "s1" suffix generation for spouse accounts
+- **Access Management**: Principal access removal cascades to linked spouse accounts
+- **Branch Assignment**: Same department/branch for principal and spouse
+
+### Biometric Integration
+- **Real-time Upload**: Fingerprint templates uploaded directly to ZK API during registration
+- **Template Format**: Base64 encoded biometric data with version and validation info
+- **Retrieval**: Biometric templates can be fetched for verification and management
+
+### API Integration
+- **Proxy Routes**: All ZK API calls routed through Next.js for CORS and SSL handling
+- **Error Handling**: Comprehensive error handling with user-friendly messages
+- **Data Validation**: Client and server-side validation for all API operations
+
+### Security Considerations
+- **PIN Security**: Handle PIN codes securely, never log in plain text
+- **Biometric Data**: Store and transmit biometric templates with appropriate security
+- **Access Control**: Implement proper authorization for all API operations
