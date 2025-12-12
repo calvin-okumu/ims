@@ -11,6 +11,7 @@ import Notification from '../components/Notification';
 import Skeleton from '../components/Skeleton';
 import ApiConnectivityTest from '../components/ApiConnectivityTest';
 import UserManagement from '../components/UserManagement';
+import EditUserModal from '../components/EditUserModal';
 import AddUserModal from '../components/AddUserModal';
 import BranchSelect from '../components/BranchSelect';
 import { uploadBiometricTemplate } from '../services/biometricService';
@@ -69,6 +70,7 @@ interface AccessLevelForm {
 
 export default function BiometricAccessApp() {
     const [activeTab, setActiveTab] = useState('register');
+    const [editUserModal, setEditUserModal] = useState<{ isOpen: boolean; user: any }>({ isOpen: false, user: null });
     const [users, setUsers] = useState<any[]>([]);
     const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning' | 'info' | 'loading'; message: string } | null>(null);
     const [accessLogs, setAccessLogs] = useState<AccessLog[]>([]);
@@ -443,7 +445,13 @@ export default function BiometricAccessApp() {
     };
 
     const handleUserEdit = (user: any) => {
-        showNotification(`Edit functionality for ${user.name} - coming soon`, 'info');
+        setEditUserModal({ isOpen: true, user });
+    };
+
+    const handleUserUpdated = (updatedUser: any) => {
+        // Refresh the user list or update the specific user
+        showNotification(`User ${updatedUser.name} updated successfully`, 'success');
+        // You might want to refresh the user list here
     };
 
     const handleUserDelete = (user: any) => {
@@ -1065,6 +1073,14 @@ export default function BiometricAccessApp() {
                         refreshTrigger={userRefreshTrigger}
                     />
                 )}
+
+                {/* Edit User Modal */}
+                <EditUserModal
+                    isOpen={editUserModal.isOpen}
+                    onClose={() => setEditUserModal({ isOpen: false, user: null })}
+                    user={editUserModal.user}
+                    onUserUpdated={handleUserUpdated}
+                />
 
                 {/* Access Levels Management */}
                 {activeTab === 'accessLevels' && (

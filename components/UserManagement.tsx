@@ -1,8 +1,8 @@
 'use client';
 
 import React, { useState, useEffect } from 'react';
-import { Search, Plus, Edit, Trash2, Users, UserCheck, UserX, Filter, Download, RefreshCw, Shield, Save, X, AlertTriangle } from 'lucide-react';
-import { getPersons, updatePerson, deletePerson } from '../services/personService';
+import { Search, Plus, Edit, Trash2, Users, UserCheck, UserX, Filter, Download, RefreshCw, Shield, AlertTriangle } from 'lucide-react';
+import { getPersons, deletePerson } from '../services/personService';
 import { getAccessLevels } from '../services/accessLevelService';
 import { getBranches, BranchHierarchy } from '../services/branchService';
 import { Person, AccessLevel } from '../types/api';
@@ -36,8 +36,6 @@ const UserManagement: React.FC<UserManagementProps> = ({
   const [totalPages, setTotalPages] = useState(1);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
   const [lastRefresh, setLastRefresh] = useState<number>(Date.now());
-  const [editingUser, setEditingUser] = useState<string | null>(null);
-  const [editForm, setEditForm] = useState<Partial<Person>>({});
   const [deleteConfirm, setDeleteConfirm] = useState<{ user: Person | null; show: boolean }>({ user: null, show: false });
 
   const pageSize = 10;
@@ -228,41 +226,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
     window.URL.revokeObjectURL(url);
   };
 
-  // Edit functions
-  const startEdit = (user: Person) => {
-    setEditingUser(user.pin);
-    setEditForm({
-      name: user.name,
-      lastName: user.lastName,
-      email: user.email,
-      mobilePhone: user.mobilePhone,
-      deptCode: user.deptCode,
-      accLevelIds: user.accLevelIds
-    });
-  };
 
-  const cancelEdit = () => {
-    setEditingUser(null);
-    setEditForm({});
-  };
-
-  const saveEdit = async () => {
-    if (!editingUser) return;
-
-    try {
-      await updatePerson(editingUser, editForm);
-      await refreshAllData();
-      setEditingUser(null);
-      setEditForm({});
-    } catch (error) {
-      console.error('Failed to update user:', error);
-      // You might want to show a notification here
-    }
-  };
-
-  const handleEditChange = (field: keyof Person, value: string) => {
-    setEditForm(prev => ({ ...prev, [field]: value }));
-  };
 
   // Delete functions
   const confirmDelete = (user: Person) => {
@@ -445,99 +409,46 @@ const UserManagement: React.FC<UserManagementProps> = ({
                         </div>
                       </div>
                       <div className="ml-3">
-                        {editingUser === user.pin ? (
-                          <div className="space-y-1">
-                            <input
-                              type="text"
-                              value={editForm.name || ''}
-                              onChange={(e) => handleEditChange('name', e.target.value)}
-                              className="text-sm font-medium text-gray-900 border border-gray-300 rounded px-2 py-1 w-full"
-                              placeholder="First Name"
-                            />
-                            <input
-                              type="text"
-                              value={editForm.lastName || ''}
-                              onChange={(e) => handleEditChange('lastName', e.target.value)}
-                              className="text-sm text-gray-600 border border-gray-300 rounded px-2 py-1 w-full"
-                              placeholder="Last Name"
-                            />
-                          </div>
-                        ) : (
-                          <div className="text-sm font-medium text-gray-900">
-                            {user.name} {user.lastName || ''}
-                            {user.pin.endsWith('s1') && (
-                              <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
-                                Spouse
-                              </span>
-                            )}
-                          </div>
-                        )}
+                        <div className="text-sm font-medium text-gray-900">
+                          {user.name} {user.lastName || ''}
+                          {user.pin.endsWith('s1') && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                              Spouse
+                            </span>
+                          )}
+                        </div>
                         <div className="text-xs text-gray-500">PIN: {user.pin}</div>
                       </div>
                     </div>
                   </td>
                    <td className="px-4 py-4 whitespace-nowrap">
-                     {editingUser === user.pin ? (
-                       <div className="space-y-1">
-                         <input
-                           type="email"
-                           value={editForm.email || ''}
-                           onChange={(e) => handleEditChange('email', e.target.value)}
-                           className="text-xs text-gray-900 border border-gray-300 rounded px-2 py-1 w-full"
-                           placeholder="Email"
-                         />
-                         <input
-                           type="tel"
-                           value={editForm.mobilePhone || ''}
-                           onChange={(e) => handleEditChange('mobilePhone', e.target.value)}
-                           className="text-xs text-gray-600 border border-gray-300 rounded px-2 py-1 w-full"
-                           placeholder="Phone"
-                         />
-                       </div>
-                     ) : (
-                       <div className="text-xs text-gray-900">
-                         {user.email && (
-                           <div className="flex items-center">
-                             <span className="text-xs">📧</span>
-                             <span className="ml-1 truncate max-w-32" title={user.email}>{user.email}</span>
-                           </div>
-                         )}
-                         {user.mobilePhone && user.mobilePhone.trim() && (
-                           <div className="flex items-center mt-0.5">
-                             <span className="text-xs">📱</span>
-                             <span className="ml-1 text-gray-600">{user.mobilePhone}</span>
-                           </div>
-                         )}
-                         {!user.email && (!user.mobilePhone || !user.mobilePhone.trim()) && (
-                           <span className="text-gray-400 text-xs">No contact</span>
-                         )}
-                       </div>
-                     )}
+                     <div className="text-xs text-gray-900">
+                       {user.email && (
+                         <div className="flex items-center">
+                           <span className="text-xs">📧</span>
+                           <span className="ml-1 truncate max-w-32" title={user.email}>{user.email}</span>
+                         </div>
+                       )}
+                       {user.mobilePhone && user.mobilePhone.trim() && (
+                         <div className="flex items-center mt-0.5">
+                           <span className="text-xs">📱</span>
+                           <span className="ml-1 text-gray-600">{user.mobilePhone}</span>
+                         </div>
+                       )}
+                       {!user.email && (!user.mobilePhone || !user.mobilePhone.trim()) && (
+                         <span className="text-gray-400 text-xs">No contact</span>
+                       )}
+                     </div>
                    </td>
                     <td className="px-4 py-4 whitespace-nowrap">
-                      {editingUser === user.pin ? (
-                        <select
-                          value={editForm.deptCode || ''}
-                          onChange={(e) => handleEditChange('deptCode', e.target.value)}
-                          className="text-sm text-gray-900 border border-gray-300 rounded px-2 py-1 w-full"
-                        >
-                          <option value="">Select Department</option>
-                          {branches.map(branch => (
-                            <option key={branch.code} value={branch.code}>
-                              {branch.fullPath}
-                            </option>
-                          ))}
-                        </select>
-                      ) : (
-                        <div className="text-sm text-gray-900">
-                          <div className="font-medium text-xs">{getBranchName(user.deptCode || '')}</div>
-                          {user.deptCode && (
-                            <div className="text-xs text-gray-500">
-                              Code: {user.deptCode}
-                            </div>
-                          )}
-                        </div>
-                      )}
+                      <div className="text-sm text-gray-900">
+                        <div className="font-medium text-xs">{getBranchName(user.deptCode || '')}</div>
+                        {user.deptCode && (
+                          <div className="text-xs text-gray-500">
+                            Code: {user.deptCode}
+                          </div>
+                        )}
+                      </div>
                     </td>
                   <td className="px-4 py-4 whitespace-nowrap">
                     {user.accLevelIds ? (
@@ -565,48 +476,27 @@ const UserManagement: React.FC<UserManagementProps> = ({
                   </td>
                    <td className="px-4 py-4 whitespace-nowrap text-right text-sm font-medium">
                      <div className="flex items-center justify-end space-x-1">
-                       {editingUser === user.pin ? (
-                         <>
-                           <button
-                             onClick={saveEdit}
-                             className="text-green-600 hover:text-green-900 p-1 rounded hover:bg-green-50"
-                             title="Save Changes"
-                           >
-                             <Save className="w-3 h-3" />
-                           </button>
-                           <button
-                             onClick={cancelEdit}
-                             className="text-gray-600 hover:text-gray-900 p-1 rounded hover:bg-gray-50"
-                             title="Cancel Edit"
-                           >
-                             <X className="w-3 h-3" />
-                           </button>
-                         </>
-                       ) : (
-                         <>
-                           <button
-                             onClick={() => onUserSelect?.(user)}
-                             className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
-                             title="View Details"
-                           >
-                             <Users className="w-3 h-3" />
-                           </button>
-                           <button
-                             onClick={() => startEdit(user)}
-                             className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
-                             title="Edit User"
-                           >
-                             <Edit className="w-3 h-3" />
-                           </button>
-                           <button
-                             onClick={() => confirmDelete(user)}
-                             className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
-                             title="Delete User"
-                           >
-                             <Trash2 className="w-3 h-3" />
-                           </button>
-                         </>
-                       )}
+                       <button
+                         onClick={() => onUserSelect?.(user)}
+                         className="text-blue-600 hover:text-blue-900 p-1 rounded hover:bg-blue-50"
+                         title="View Details"
+                       >
+                         <Users className="w-3 h-3" />
+                       </button>
+                       <button
+                         onClick={() => onUserEdit?.(user)}
+                         className="text-indigo-600 hover:text-indigo-900 p-1 rounded hover:bg-indigo-50"
+                         title="Edit User"
+                       >
+                         <Edit className="w-3 h-3" />
+                       </button>
+                       <button
+                         onClick={() => confirmDelete(user)}
+                         className="text-red-600 hover:text-red-900 p-1 rounded hover:bg-red-50"
+                         title="Delete User"
+                       >
+                         <Trash2 className="w-3 h-3" />
+                       </button>
                      </div>
                    </td>
                 </tr>
