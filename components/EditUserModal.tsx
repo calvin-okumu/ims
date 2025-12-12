@@ -38,6 +38,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof Person, string>>>({});
+  const [submitError, setSubmitError] = useState<string>('');
 
   // Helper function to split full name into first and last name
   const splitFullName = (fullName: string) => {
@@ -73,10 +74,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
       }
     };
 
-    if (isOpen) {
-      fetchAccessLevelsData();
-    }
-  }, [isOpen]);
+    fetchAccessLevelsData();
+  }, []);
 
   // Populate form when user changes
   useEffect(() => {
@@ -183,16 +182,19 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
       if (spouseData && spouseFormData.name) {
         const spouseUpdateData = {
           ...spouseFormData,
-          name: `${spouseFormData.name?.trim() || ''} ${spouseFormData.lastName?.trim() || ''}`.trim()
+          name: `${spouseFormData.name?.trim() || ''} ${spouseFormData.lastName?.trim() || ''}`.trim(),
+          deptCode: principalData.deptCode,
+          accLevelIds: principalData.accLevelIds
         };
         await updatePerson(spouseData.pin, spouseUpdateData);
       }
 
+      setSubmitError('');
       onUserUpdated({ ...user, ...principalData });
       onClose();
     } catch (error) {
       console.error('Failed to update user:', error);
-      // You might want to show an error notification here
+      setSubmitError(error instanceof Error ? error.message : 'Failed to update user');
     } finally {
       setIsSubmitting(false);
     }
@@ -208,6 +210,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
     });
     setSelectedBranch('');
     setErrors({});
+    setSubmitError('');
     onClose();
   };
 
@@ -216,158 +219,163 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
   return (
     <>
       <div className="fixed inset-0 overflow-y-auto h-full w-full z-[60] flex items-center justify-center backdrop-blur-[2px] bg-black/10" onClick={handleClose}>
-        <div className="relative mx-auto p-6 border w-full max-w-md shadow-2xl rounded-lg bg-white animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
+        <div className="relative mx-auto p-8 border w-full max-w-2xl shadow-2xl rounded-2xl bg-gradient-to-br from-white to-blue-50 dark:from-gray-800 dark:to-gray-900 animate-in zoom-in-95 duration-300 border-blue-200 dark:border-gray-600" onClick={(e) => e.stopPropagation()}>
           <div className="mb-4">
-            <div className="flex items-center justify-between mb-6">
-              <h3 className="text-xl font-semibold text-gray-900 flex items-center">
-                <User className="w-5 h-5 mr-2 text-blue-600" />
-                Edit User
-              </h3>
-              <button
-                onClick={handleClose}
-                className="text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-full p-1 transition-colors"
-              >
-                <X className="w-5 h-5" />
-              </button>
-            </div>
+             <div className="flex items-center justify-between mb-8">
+               <h3 className="text-2xl font-bold text-gray-800 dark:text-white flex items-center bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                 <User className="w-6 h-6 mr-3 text-blue-600" />
+                 Edit User Profile
+               </h3>
+               <button
+                 onClick={handleClose}
+                 className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-300 hover:bg-red-50 dark:hover:bg-red-900 rounded-full p-2 transition-all duration-200 hover:scale-110"
+               >
+                 <X className="w-5 h-5" />
+               </button>
+             </div>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              {/* PIN (Read-only) */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Account Number <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    value={user?.pin || ''}
-                    readOnly
-                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 cursor-not-allowed"
-                  />
+             {submitError && (
+               <div className="bg-red-50 dark:bg-red-900 border border-red-200 dark:border-red-700 rounded-lg p-4">
+                 <p className="text-red-800 dark:text-red-200 text-sm">{submitError}</p>
+               </div>
+             )}
+
+             <form onSubmit={handleSubmit} className="grid grid-cols-2 gap-4">
+                {/* PIN (Read-only) */}
+                <div className="col-span-2">
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    Account Number <span className="text-red-500">*</span>
+                  </label>
+                  <div className="relative">
+                    <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      value={user?.pin || ''}
+                      readOnly
+                       className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg bg-gray-50 dark:bg-gray-700 text-gray-900 dark:text-white cursor-not-allowed shadow-sm"
+                    />
+                  </div>
+                  <p className="text-xs text-gray-500 dark:text-gray-400 mt-1">PIN cannot be changed</p>
                 </div>
-                <p className="text-xs text-gray-500 mt-1">PIN cannot be changed</p>
-              </div>
 
-              {/* First Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
-                  First Name <span className="text-red-500">*</span>
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    value={formData.name || ''}
-                    onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 ${
-                      errors.name ? 'border-red-500' : 'border-gray-300'
-                    }`}
-                    placeholder="Enter first name"
-                  />
+               {/* First Name */}
+               <div>
+                 <label className="block text-sm font-medium text-gray-900 mb-1">
+                   First Name <span className="text-red-500">*</span>
+                 </label>
+                 <div className="relative">
+                   <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                   <input
+                     type="text"
+                     value={formData.name || ''}
+                     onChange={(e) => handleInputChange('name', e.target.value)}
+                     className={`w-full pl-10 pr-4 py-3 border rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 shadow-sm transition-all duration-200 ${
+                       errors.name ? 'border-red-500 focus:ring-red-500' : 'border-gray-200 dark:border-gray-600 hover:border-blue-300 dark:hover:border-blue-400'
+                     }`}
+                     placeholder="Enter first name"
+                   />
+                 </div>
+                 {errors.name && (
+                   <p className="text-red-500 text-xs mt-1">{errors.name}</p>
+                 )}
+               </div>
+
+                {/* Last Name */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    Last Name
+                  </label>
+                  <div className="relative">
+                    <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="text"
+                      value={formData.lastName || ''}
+                      onChange={(e) => handleInputChange('lastName', e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-400 transition-all duration-200"
+                      placeholder="Enter last name"
+                    />
+                  </div>
                 </div>
-                {errors.name && (
-                  <p className="text-red-500 text-xs mt-1">{errors.name}</p>
-                )}
-              </div>
 
-              {/* Last Name */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Last Name
-                </label>
-                <div className="relative">
-                  <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="text"
-                    value={formData.lastName || ''}
-                    onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                    placeholder="Enter last name"
-                  />
+                {/* Email */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    Email
+                  </label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="email"
+                      value={formData.email || ''}
+                      onChange={(e) => handleInputChange('email', e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-400 transition-all duration-200"
+                      placeholder="Enter email address"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Email */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Email
-                </label>
-                <div className="relative">
-                  <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="email"
-                    value={formData.email || ''}
-                    onChange={(e) => handleInputChange('email', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                    placeholder="Enter email address"
-                  />
+                {/* Phone */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    Phone
+                  </label>
+                  <div className="relative">
+                    <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <input
+                      type="tel"
+                      value={formData.mobilePhone || ''}
+                      onChange={(e) => handleInputChange('mobilePhone', e.target.value)}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-400 transition-all duration-200"
+                      placeholder="Enter phone number"
+                    />
+                  </div>
                 </div>
-              </div>
 
-              {/* Phone */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Phone
-                </label>
-                <div className="relative">
-                  <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <input
-                    type="tel"
-                    value={formData.mobilePhone || ''}
-                    onChange={(e) => handleInputChange('mobilePhone', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                    placeholder="Enter phone number"
-                  />
-                </div>
-              </div>
-
-              {/* Department */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Branch
-                </label>
-                <BranchSelect
-                  value={selectedBranch}
-                  onChange={(value) => {
-                    setSelectedBranch(value);
-                    handleInputChange('deptCode', value);
-                  }}
-                  onCreateNew={() => setShowBranchCreator(true)}
-                />
-              </div>
-
-              {/* Access Level */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Access Level
-                </label>
-                <div className="relative">
-                  <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                  <select
-                    value={selectedAccessLevel}
-                    onChange={(e) => {
-                      setSelectedAccessLevel(e.target.value);
-                      handleInputChange('accLevelIds', e.target.value);
+                {/* Department */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    Branch
+                  </label>
+                  <BranchSelect
+                    value={selectedBranch}
+                    onChange={(value) => {
+                      setSelectedBranch(value);
+                      handleInputChange('deptCode', value);
                     }}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
-                  >
-                    <option value="">Select Access Level</option>
-                    {accessLevels.map(level => (
-                      <option key={level.LevelID} value={level.LevelID}>
-                        {level.Name} - {level.Description}
-                      </option>
-                    ))}
-                  </select>
+                    onCreateNew={() => setShowBranchCreator(true)}
+                  />
                 </div>
-              </div>
 
-              {/* Fingerprint */}
-              <div>
-                <label className="block text-sm font-medium text-gray-900 mb-1">
-                  Fingerprint
-                </label>
-                <div className="space-y-2">
+                {/* Access Level */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    Access Level
+                  </label>
+                  <div className="relative">
+                    <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <select
+                      value={selectedAccessLevel}
+                      onChange={(e) => {
+                        setSelectedAccessLevel(e.target.value);
+                        handleInputChange('accLevelIds', e.target.value);
+                      }}
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-400 transition-all duration-200"
+                    >
+                      <option value="">Select Access Level</option>
+                      {accessLevels.map(level => (
+                        <option key={level.id || level.LevelID} value={level.id || level.LevelID}>
+                          {level.name || level.Name}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+
+                {/* Fingerprint */}
+                <div className="col-span-2 grid grid-cols-2 gap-4">
+                  <label className="col-span-2 block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                    Fingerprint
+                  </label>
                   <div className="relative">
                     <Fingerprint className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
                     <select
@@ -376,7 +384,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                         const fingerIndex = parseInt(e.target.value);
                         setFingerprintData(prev => prev ? { ...prev, fingerIndex } : { template: '', fingerIndex });
                       }}
-                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                      className="w-full pl-10 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 shadow-sm hover:border-blue-300 dark:hover:border-blue-400 transition-all duration-200"
                     >
                       <option value="">Select Finger</option>
                       <option value="0">Right Thumb</option>
@@ -399,118 +407,119 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                         const template = e.target.value;
                         setFingerprintData(prev => prev ? { ...prev, template } : { template, fingerIndex: 0 });
                       }}
-                      className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 text-xs"
+                        className="w-full pl-4 pr-4 py-3 border border-gray-200 dark:border-gray-600 rounded-lg focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800 text-xs shadow-sm hover:border-blue-300 dark:hover:border-blue-400 transition-all duration-200"
                       placeholder="Enter fingerprint template (Base64)"
                     />
                   </div>
                   {fingerprintData?.template && (
-                    <p className="text-xs text-green-600">Fingerprint template configured</p>
-                  )}
-                </div>
-              </div>
-
-              {/* Spouse Information (if applicable) */}
-              {user && !user.pin.endsWith('s1') && (
-                <div className="mt-8 pt-6 border-t border-gray-200">
-                  <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
-                    <User className="w-5 h-5 mr-2 text-pink-600" />
-                    Spouse Information
-                  </h4>
-
-                  {spouseData ? (
-                    <div className="space-y-4">
-                      {/* Spouse First Name */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-1">
-                          Spouse First Name
-                        </label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            type="text"
-                            value={spouseFormData.name || ''}
-                            onChange={(e) => setSpouseFormData(prev => ({ ...prev, name: e.target.value }))}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900"
-                            placeholder="Enter spouse first name"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Spouse Last Name */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-1">
-                          Spouse Last Name
-                        </label>
-                        <div className="relative">
-                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            type="text"
-                            value={spouseFormData.lastName || ''}
-                            onChange={(e) => setSpouseFormData(prev => ({ ...prev, lastName: e.target.value }))}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900"
-                            placeholder="Enter spouse last name"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Spouse Email */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-1">
-                          Spouse Email
-                        </label>
-                        <div className="relative">
-                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            type="email"
-                            value={spouseFormData.email || ''}
-                            onChange={(e) => setSpouseFormData(prev => ({ ...prev, email: e.target.value }))}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900"
-                            placeholder="Enter spouse email address"
-                          />
-                        </div>
-                      </div>
-
-                      {/* Spouse Phone */}
-                      <div>
-                        <label className="block text-sm font-medium text-gray-900 mb-1">
-                          Spouse Phone
-                        </label>
-                        <div className="relative">
-                          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
-                          <input
-                            type="tel"
-                            value={spouseFormData.mobilePhone || ''}
-                            onChange={(e) => setSpouseFormData(prev => ({ ...prev, mobilePhone: e.target.value }))}
-                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900"
-                            placeholder="Enter spouse phone number"
-                          />
-                        </div>
-                      </div>
-                    </div>
-                  ) : (
-                    <div className="text-center py-8 text-gray-500">
-                      <User className="w-12 h-12 mx-auto mb-3 text-gray-300" />
-                      <p className="text-sm">No spouse information found</p>
-                      <p className="text-xs mt-1">Spouse data will appear here if registered</p>
+                    <div className="col-span-2">
+                      <p className="text-xs text-green-600 dark:text-green-400">Fingerprint template configured</p>
                     </div>
                   )}
                 </div>
-              )}
 
-              {/* Action Buttons */}
-              <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
-                <button
-                  type="button"
-                  onClick={handleClose}
-                  className="px-4 py-2.5 border border-gray-300 rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 hover:border-gray-400 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 transition-colors"
-                  disabled={isSubmitting}
-                >
+                {/* Spouse Information (if applicable) */}
+                {user && !user.pin.endsWith('s1') && (
+                  <div className="col-span-2 mt-8 pt-6 border-t border-gray-200 dark:border-gray-600">
+                    <h4 className="text-lg font-medium text-gray-900 dark:text-white mb-4 flex items-center">
+                      <User className="w-5 h-5 mr-2 text-pink-600" />
+                      Spouse Information
+                    </h4>
+
+                    {spouseData ? (
+                      <div className="grid grid-cols-2 gap-4">
+                        {/* Spouse First Name */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                            Spouse First Name
+                          </label>
+                          <div className="relative">
+                            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type="text"
+                              value={spouseFormData.name || ''}
+                              onChange={(e) => setSpouseFormData(prev => ({ ...prev, name: e.target.value }))}
+                              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                              placeholder="Enter spouse first name"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Spouse Last Name */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                            Spouse Last Name
+                          </label>
+                          <div className="relative">
+                            <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type="text"
+                              value={spouseFormData.lastName || ''}
+                              onChange={(e) => setSpouseFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                              placeholder="Enter spouse last name"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Spouse Email */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                            Spouse Email
+                          </label>
+                          <div className="relative">
+                            <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type="email"
+                              value={spouseFormData.email || ''}
+                              onChange={(e) => setSpouseFormData(prev => ({ ...prev, email: e.target.value }))}
+                              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                              placeholder="Enter spouse email address"
+                            />
+                          </div>
+                        </div>
+
+                        {/* Spouse Phone */}
+                        <div>
+                          <label className="block text-sm font-medium text-gray-900 dark:text-white mb-1">
+                            Spouse Phone
+                          </label>
+                          <div className="relative">
+                            <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                            <input
+                              type="tel"
+                              value={spouseFormData.mobilePhone || ''}
+                              onChange={(e) => setSpouseFormData(prev => ({ ...prev, mobilePhone: e.target.value }))}
+                              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900 dark:text-white bg-white dark:bg-gray-800"
+                              placeholder="Enter spouse phone number"
+                            />
+                          </div>
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-8 text-gray-500 dark:text-gray-400">
+                        <User className="w-12 h-12 mx-auto mb-3 text-gray-300 dark:text-gray-600" />
+                        <p className="text-sm">No spouse information found</p>
+                        <p className="text-xs mt-1">Spouse data will appear here if registered</p>
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Action Buttons */}
+                <div className="col-span-2 flex justify-end space-x-3 pt-6 border-t border-gray-200 dark:border-gray-600">
+                 <button
+                   type="button"
+                   onClick={handleClose}
+                   className="px-4 py-2.5 border border-gray-300 dark:border-gray-600 rounded-lg text-sm font-medium text-gray-700 dark:text-gray-300 hover:bg-gray-50 dark:hover:bg-gray-700 hover:border-gray-400 dark:hover:border-gray-500 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-gray-500 dark:focus:ring-gray-400 transition-colors"
+                   disabled={isSubmitting}
+                 >
                   Cancel
                 </button>
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="px-4 py-2.5 bg-blue-600 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-blue-700 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 disabled:hover:shadow-none flex items-center transition-all"
+                   className="px-4 py-2.5 bg-blue-600 dark:bg-blue-700 border border-transparent rounded-lg text-sm font-medium text-white hover:bg-blue-700 dark:hover:bg-blue-800 hover:shadow-md focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed disabled:hover:bg-blue-600 dark:disabled:hover:bg-blue-700 disabled:hover:shadow-none flex items-center transition-all"
                 >
                   {isSubmitting ? (
                     <>

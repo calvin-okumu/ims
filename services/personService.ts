@@ -70,7 +70,7 @@ export const createPerson = async (person: PersonCreateRequest): Promise<Person>
 };
 
 export const updatePerson = async (pin: string, person: Partial<Person>): Promise<Person> => {
-  const response = await apiClient.put(`/api/v2/person/update/${pin}`, person);
+  const response = await apiClient.post(`/api/person/add`, { ...person, pin });
   return response.data;
 };
 

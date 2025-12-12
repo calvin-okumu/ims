@@ -67,7 +67,7 @@ export const TableSkeleton: React.FC<{ rows?: number; columns?: number }> = ({
 );
 
 export const CardSkeleton: React.FC = () => (
-  <div className="bg-white p-6 rounded-lg shadow-sm border">
+  <div className="bg-white dark:bg-gray-800 p-6 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
     <div className="space-y-4">
       <Skeleton variant="rectangular" height={24} width="60%" />
       <Skeleton variant="text" />

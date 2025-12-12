@@ -87,20 +87,20 @@ const BranchManager: React.FC<BranchManagerProps> = ({
               )}
               {!hasChildren && <div className="w-6" />}
               <Building className="w-4 h-4 text-blue-600 mr-2" />
-              <span className="text-sm font-medium text-gray-900">{branch.name}</span>
+              <span className="text-sm font-medium text-gray-900 dark:text-white">{branch.name}</span>
             </div>
           </td>
           <td className="px-4 py-3 whitespace-nowrap">
-            <span className="text-sm text-gray-500 font-mono">{branch.code}</span>
+            <span className="text-sm text-gray-500 dark:text-gray-400 font-mono">{branch.code}</span>
           </td>
           <td className="px-4 py-3 whitespace-nowrap">
-            <span className="text-sm text-gray-900">{branch.description || 'No description'}</span>
+            <span className="text-sm text-gray-900 dark:text-white">{branch.description || 'No description'}</span>
           </td>
           <td className="px-4 py-3 whitespace-nowrap">
             <span className={`inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium ${
               branch.isActive
-                ? 'bg-green-100 text-green-800'
-                : 'bg-red-100 text-red-800'
+                ? 'bg-green-100 dark:bg-green-900 text-green-800 dark:text-green-200'
+                : 'bg-red-100 dark:bg-red-900 text-red-800 dark:text-red-200'
             }`}>
               {branch.isActive ? 'Active' : 'Inactive'}
             </span>
@@ -147,19 +147,19 @@ const BranchManager: React.FC<BranchManagerProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-sm border border-gray-200 dark:border-gray-700">
       {/* Header */}
-      <div className="p-6 border-b border-gray-200">
+      <div className="p-6 border-b border-gray-200 dark:border-gray-700">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center space-x-3">
             <Building className="w-6 h-6 text-blue-600" />
             <div>
-              <h2 className="text-xl font-semibold text-gray-900">Branch Management</h2>
-              <p className="text-sm text-gray-500 mt-1">
+              <h2 className="text-xl font-semibold text-gray-900 dark:text-white">Branch Management</h2>
+              <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">
                 Last updated: {new Date(lastRefresh).toLocaleTimeString()}
               </p>
             </div>
-            <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
+            <span className="px-2 py-1 bg-blue-100 dark:bg-blue-900 text-blue-800 dark:text-blue-200 text-xs font-medium rounded-full">
               {branches.length} branches
             </span>
           </div>
@@ -168,7 +168,7 @@ const BranchManager: React.FC<BranchManagerProps> = ({
             <button
               onClick={fetchBranches}
               disabled={loading}
-              className="inline-flex items-center px-3 py-2 border border-gray-300 rounded-md text-sm font-medium text-gray-700 bg-white hover:bg-gray-50 disabled:opacity-50"
+              className="inline-flex items-center px-3 py-2 border border-gray-300 dark:border-gray-600 rounded-md text-sm font-medium text-gray-700 dark:text-gray-300 bg-white dark:bg-gray-700 hover:bg-gray-50 dark:hover:bg-gray-600 disabled:opacity-50"
             >
               <RefreshCw className={`w-4 h-4 mr-2 ${loading ? 'animate-spin' : ''}`} />
               Refresh
@@ -193,7 +193,7 @@ const BranchManager: React.FC<BranchManagerProps> = ({
               placeholder="Search branches by name or code..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
-              className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 dark:text-white bg-white dark:bg-gray-700 placeholder-gray-500 dark:placeholder-gray-400"
             />
           </div>
         </div>
@@ -204,19 +204,19 @@ const BranchManager: React.FC<BranchManagerProps> = ({
         {loading ? (
           <TableSkeleton rows={10} columns={6} />
         ) : (
-          <table className="min-w-full divide-y divide-gray-200">
-            <thead className="bg-gray-50">
+          <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+            <thead className="bg-gray-50 dark:bg-gray-700">
               <tr>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Branch Name
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Code
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Description
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">
                   Status
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
@@ -227,15 +227,15 @@ const BranchManager: React.FC<BranchManagerProps> = ({
                 </th>
               </tr>
             </thead>
-            <tbody className="bg-white divide-y divide-gray-200">
+            <tbody className="bg-white dark:bg-gray-800 divide-y divide-gray-200 dark:divide-gray-700">
               {filteredBranches.length > 0 ? (
                 filteredBranches.map(branch => renderBranchRow(branch))
               ) : (
                 <tr>
                   <td colSpan={6} className="px-4 py-8 text-center">
-                    <Building className="mx-auto h-12 w-12 text-gray-400" />
-                    <h3 className="mt-2 text-sm font-medium text-gray-900">No branches found</h3>
-                    <p className="mt-1 text-sm text-gray-500">
+                    <Building className="mx-auto h-12 w-12 text-gray-400 dark:text-gray-500" />
+                    <h3 className="mt-2 text-sm font-medium text-gray-900 dark:text-white">No branches found</h3>
+                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                       {searchTerm ? 'Try adjusting your search criteria.' : 'Get started by creating a new branch.'}
                     </p>
                   </td>
