@@ -1,7 +1,9 @@
 import React, { useState, useEffect } from 'react';
-import { X, User, Mail, Phone, Building, Hash, Save, Loader2 } from 'lucide-react';
+import { X, User, Mail, Phone, Building, Hash, Save, Loader2, Shield, Fingerprint } from 'lucide-react';
 import { updatePerson, getPersons } from '../services/personService';
-import { Person } from '../types/api';
+import { getAccessLevels } from '../services/accessLevelService';
+import { uploadBiometricTemplate } from '../services/biometricService';
+import { Person, AccessLevel } from '../types/api';
 import BranchSelect from './BranchSelect';
 import BranchCreator from './BranchCreator';
 
@@ -16,6 +18,9 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBranchCreator, setShowBranchCreator] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState('');
+  const [accessLevels, setAccessLevels] = useState<AccessLevel[]>([]);
+  const [selectedAccessLevel, setSelectedAccessLevel] = useState('');
+  const [fingerprintData, setFingerprintData] = useState<{ template: string; fingerIndex: number } | null>(null);
   const [spouseData, setSpouseData] = useState<Person | null>(null);
   const [spouseFormData, setSpouseFormData] = useState<Partial<Person>>({
     name: '',
@@ -57,6 +62,22 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
     }
   };
 
+  // Fetch access levels
+  useEffect(() => {
+    const fetchAccessLevelsData = async () => {
+      try {
+        const levels = await getAccessLevels();
+        setAccessLevels(levels);
+      } catch (error) {
+        console.error('Failed to fetch access levels:', error);
+      }
+    };
+
+    if (isOpen) {
+      fetchAccessLevelsData();
+    }
+  }, [isOpen]);
+
   // Populate form when user changes
   useEffect(() => {
     if (user && isOpen) {
@@ -66,9 +87,11 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
         lastName: lastName,
         email: user.email || '',
         mobilePhone: user.mobilePhone || '',
-        deptCode: user.deptCode || ''
+        deptCode: user.deptCode || '',
+        accLevelIds: user.accLevelIds || ''
       });
       setSelectedBranch(user.deptCode || '');
+      setSelectedAccessLevel(user.accLevelIds || '');
       setErrors({});
 
       // Check for spouse data
@@ -142,6 +165,19 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
       // Update principal user
       await updatePerson(user.pin, principalData);
+
+      // Upload fingerprint if provided
+      if (fingerprintData?.template && fingerprintData.fingerIndex !== undefined) {
+        try {
+          await uploadBiometricTemplate(parseInt(user.pin), {
+            PersonID: 0,
+            Template: fingerprintData.template,
+            Type: 1 // Fingerprint
+          });
+        } catch (fingerprintError) {
+          console.warn('Fingerprint upload failed, but user was updated successfully');
+        }
+      }
 
       // Update spouse if spouse data exists
       if (spouseData && spouseFormData.name) {
@@ -299,6 +335,78 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                   }}
                   onCreateNew={() => setShowBranchCreator(true)}
                 />
+              </div>
+
+              {/* Access Level */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  Access Level
+                </label>
+                <div className="relative">
+                  <Shield className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                  <select
+                    value={selectedAccessLevel}
+                    onChange={(e) => {
+                      setSelectedAccessLevel(e.target.value);
+                      handleInputChange('accLevelIds', e.target.value);
+                    }}
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                  >
+                    <option value="">Select Access Level</option>
+                    {accessLevels.map(level => (
+                      <option key={level.LevelID} value={level.LevelID}>
+                        {level.Name} - {level.Description}
+                      </option>
+                    ))}
+                  </select>
+                </div>
+              </div>
+
+              {/* Fingerprint */}
+              <div>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  Fingerprint
+                </label>
+                <div className="space-y-2">
+                  <div className="relative">
+                    <Fingerprint className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                    <select
+                      value={fingerprintData?.fingerIndex || ''}
+                      onChange={(e) => {
+                        const fingerIndex = parseInt(e.target.value);
+                        setFingerprintData(prev => prev ? { ...prev, fingerIndex } : { template: '', fingerIndex });
+                      }}
+                      className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
+                    >
+                      <option value="">Select Finger</option>
+                      <option value="0">Right Thumb</option>
+                      <option value="1">Right Index</option>
+                      <option value="2">Right Middle</option>
+                      <option value="3">Right Ring</option>
+                      <option value="4">Right Pinky</option>
+                      <option value="5">Left Thumb</option>
+                      <option value="6">Left Index</option>
+                      <option value="7">Left Middle</option>
+                      <option value="8">Left Ring</option>
+                      <option value="9">Left Pinky</option>
+                    </select>
+                  </div>
+                  <div className="relative">
+                    <input
+                      type="text"
+                      value={fingerprintData?.template || ''}
+                      onChange={(e) => {
+                        const template = e.target.value;
+                        setFingerprintData(prev => prev ? { ...prev, template } : { template, fingerIndex: 0 });
+                      }}
+                      className="w-full pl-4 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 text-xs"
+                      placeholder="Enter fingerprint template (Base64)"
+                    />
+                  </div>
+                  {fingerprintData?.template && (
+                    <p className="text-xs text-green-600">Fingerprint template configured</p>
+                  )}
+                </div>
               </div>
 
               {/* Spouse Information (if applicable) */}
