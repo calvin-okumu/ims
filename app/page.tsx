@@ -1074,14 +1074,6 @@ export default function BiometricAccessApp() {
                     />
                 )}
 
-                {/* Edit User Modal */}
-                <EditUserModal
-                    isOpen={editUserModal.isOpen}
-                    onClose={() => setEditUserModal({ isOpen: false, user: null })}
-                    user={editUserModal.user}
-                    onUserUpdated={handleUserUpdated}
-                />
-
                 {/* Access Levels Management */}
                 {activeTab === 'accessLevels' && (
                     <div className="space-y-6">
@@ -1323,6 +1315,14 @@ export default function BiometricAccessApp() {
                 isOpen={showAddUserModal}
                 onClose={() => setShowAddUserModal(false)}
                 onUserAdded={handleUserAdded}
+            />
+
+            {/* Edit User Modal */}
+            <EditUserModal
+                isOpen={editUserModal.isOpen}
+                onClose={() => setEditUserModal({ isOpen: false, user: null })}
+                user={editUserModal.user}
+                onUserUpdated={handleUserUpdated}
             />
         </div>
     );
