@@ -31,6 +31,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
   const [loading, setLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'active' | 'inactive'>('all');
+  const [showCouples, setShowCouples] = useState<boolean>(false);
   const [currentPage, setCurrentPage] = useState(1);
   const [totalPages, setTotalPages] = useState(1);
   const [selectedUsers, setSelectedUsers] = useState<Set<string>>(new Set());
@@ -142,9 +143,14 @@ const UserManagement: React.FC<UserManagementProps> = ({
     setLastRefresh(Date.now());
   }, []);
 
-  // Filter users based on search and status
+  // Filter users based on search, status, and couple settings
   useEffect(() => {
     let filtered = users;
+
+    // Couple filter - show only principals when showCouples is false
+    if (!showCouples) {
+      filtered = filtered.filter(user => !user.pin.endsWith('s1'));
+    }
 
     // Search filter
     if (searchTerm) {
@@ -166,7 +172,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
     }
 
     setFilteredUsers(filtered);
-  }, [users, searchTerm, statusFilter]);
+  }, [users, searchTerm, statusFilter, showCouples]);
 
   const handleUserSelect = (user: Person, checked: boolean) => {
     const newSelected = new Set(selectedUsers);
@@ -194,7 +200,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
 
   const exportUsers = () => {
     const csvContent = [
-      ['PIN', 'First Name', 'Last Name', 'Email', 'Phone', 'Department Code', 'Department Name', 'Access Level', 'Card Number', 'Status'].join(','),
+      ['PIN', 'First Name', 'Last Name', 'Email', 'Phone', 'Department Code', 'Department Name', 'Access Level', 'Card Number', 'Status', 'Type'].join(','),
       ...filteredUsers.map(user => [
         user.pin,
         `"${user.name}"`,
@@ -205,7 +211,8 @@ const UserManagement: React.FC<UserManagementProps> = ({
         `"${getBranchName(user.deptCode || '')}"`,
         user.accLevelIds ? getAccessLevelName(user.accLevelIds) : 'No Access',
         user.cardNo || '',
-        'Active'
+        'Active',
+        user.pin.endsWith('s1') ? 'Spouse' : 'Principal'
       ].join(','))
     ].join('\n');
 
@@ -232,7 +239,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
               </p>
             </div>
             <span className="px-2 py-1 bg-blue-100 text-blue-800 text-xs font-medium rounded-full">
-              {filteredUsers.length} users
+              {filteredUsers.length} user{filteredUsers.length !== 1 ? 's' : ''}
             </span>
           </div>
 
@@ -289,6 +296,19 @@ const UserManagement: React.FC<UserManagementProps> = ({
                 <option value="active">Active</option>
                 <option value="inactive">Inactive</option>
               </select>
+            </div>
+
+            <div className="flex items-center space-x-2">
+              <input
+                type="checkbox"
+                id="showCouples"
+                checked={showCouples}
+                onChange={(e) => setShowCouples(e.target.checked)}
+                className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
+              />
+              <label htmlFor="showCouples" className="text-sm text-gray-700 font-medium">
+                Show Couples
+              </label>
             </div>
           </div>
         </div>
@@ -350,10 +370,14 @@ const UserManagement: React.FC<UserManagementProps> = ({
                   <td className="px-4 py-4 whitespace-nowrap">
                     <div className="text-sm text-gray-900 font-mono text-xs">{user.pin}</div>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                   <td className="px-6 py-4 whitespace-nowrap">
                     <div className="flex items-center">
                       <div className="flex-shrink-0 h-8 w-8">
-                        <div className="h-8 w-8 rounded-full bg-gradient-to-br from-blue-400 to-blue-600 flex items-center justify-center">
+                        <div className={`h-8 w-8 rounded-full flex items-center justify-center ${
+                          user.pin.endsWith('s1')
+                            ? 'bg-gradient-to-br from-pink-400 to-pink-600'
+                            : 'bg-gradient-to-br from-blue-400 to-blue-600'
+                        }`}>
                           <span className="text-xs font-medium text-white">
                             {user.name.charAt(0).toUpperCase()}
                           </span>
@@ -362,6 +386,11 @@ const UserManagement: React.FC<UserManagementProps> = ({
                       <div className="ml-3">
                         <div className="text-sm font-medium text-gray-900">
                           {user.name} {user.lastName || ''}
+                          {user.pin.endsWith('s1') && (
+                            <span className="ml-2 inline-flex items-center px-2 py-0.5 rounded-full text-xs font-medium bg-pink-100 text-pink-800">
+                              Spouse
+                            </span>
+                          )}
                         </div>
                         <div className="text-xs text-gray-500">PIN: {user.pin}</div>
                       </div>
