@@ -75,5 +75,23 @@ export const updatePerson = async (pin: string, person: Partial<Person>): Promis
 };
 
 export const deletePerson = async (pin: string): Promise<void> => {
-  await apiClient.post(`/api/v2/person/delete/${pin}`);
+  // Use the v1 endpoint for person deletion (personnel dismissal)
+  const response = await fetch('/api/persons/delete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ pin })
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+
+  // Handle ZKBio response format
+  if (data.code !== 0) {
+    throw new Error(data.message || 'API Error');
+  }
 };
