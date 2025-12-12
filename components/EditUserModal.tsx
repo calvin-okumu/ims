@@ -94,7 +94,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
   return (
     <>
-      <div className="fixed inset-0 bg-gray-900 bg-opacity-30 backdrop-blur-sm overflow-y-auto h-full w-full z-[60] flex items-center justify-center animate-in fade-in duration-200" onClick={handleClose}>
+      <div className="fixed inset-0 overflow-y-auto h-full w-full z-[60] flex items-center justify-center" onClick={handleClose}>
         <div className="relative mx-auto p-6 border w-full max-w-md shadow-2xl rounded-lg bg-white animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
           <div className="mb-4">
             <div className="flex items-center justify-between mb-6">
