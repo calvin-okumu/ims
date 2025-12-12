@@ -69,7 +69,7 @@ interface AccessLevelForm {
 }
 
 export default function BiometricAccessApp() {
-    const [activeTab, setActiveTab] = useState('register');
+    const [activeTab, setActiveTab] = useState('users');
     const [editUserModal, setEditUserModal] = useState<{ isOpen: boolean; user: any }>({ isOpen: false, user: null });
     const [users, setUsers] = useState<any[]>([]);
     const [notification, setNotification] = useState<{ type: 'success' | 'error' | 'warning' | 'info' | 'loading'; message: string } | null>(null);
