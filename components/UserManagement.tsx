@@ -201,7 +201,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
 
   const exportUsers = () => {
     const csvContent = [
-      ['PIN', 'First Name', 'Last Name', 'Email', 'Phone', 'Department Code', 'Department Name', 'Access Level', 'Card Number', 'Status', 'Type'].join(','),
+      ['Account Number', 'First Name', 'Last Name', 'Email', 'Phone', 'Branch Code', 'Branch Name', 'Access Level', 'Card Number', 'Status', 'Type'].join(','),
       ...filteredUsers.map(user => [
         user.pin,
         `"${user.name}"`,
@@ -302,7 +302,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
             <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
             <input
               type="text"
-              placeholder="Search by name, PIN, email, phone, or department..."
+              placeholder="Search by name, account number, email, phone, or branch..."
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 placeholder-gray-500"
@@ -355,18 +355,18 @@ const UserManagement: React.FC<UserManagementProps> = ({
                     className="rounded border-gray-300 text-blue-600 focus:ring-blue-500"
                   />
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  PIN
-                </th>
+                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                   Account Number
+                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Full Name
                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Contact Info
                 </th>
-                <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                  Department
-                </th>
+                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                   Branch
+                 </th>
                 <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                   Access Level
                 </th>
@@ -417,7 +417,7 @@ const UserManagement: React.FC<UserManagementProps> = ({
                             </span>
                           )}
                         </div>
-                        <div className="text-xs text-gray-500">PIN: {user.pin}</div>
+                        <div className="text-xs text-gray-500">Account: {user.pin}</div>
                       </div>
                     </div>
                   </td>

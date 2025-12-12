@@ -94,7 +94,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
   return (
     <>
-      <div className="fixed inset-0 overflow-y-auto h-full w-full z-[60] flex items-center justify-center backdrop-blur-[1px] bg-black/5" onClick={handleClose}>
+      <div className="fixed inset-0 overflow-y-auto h-full w-full z-[60] flex items-center justify-center backdrop-blur-[2px] bg-black/10" onClick={handleClose}>
         <div className="relative mx-auto p-6 border w-full max-w-md shadow-2xl rounded-lg bg-white animate-in zoom-in-95 duration-200" onClick={(e) => e.stopPropagation()}>
           <div className="mb-4">
             <div className="flex items-center justify-between mb-6">
@@ -113,8 +113,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
             <form onSubmit={handleSubmit} className="space-y-5">
               {/* PIN (Read-only) */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  PIN <span className="text-red-500">*</span>
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  Account Number <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
                   <Hash className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
@@ -122,7 +122,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                     type="text"
                     value={user?.pin || ''}
                     readOnly
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-600 cursor-not-allowed"
+                     className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md bg-gray-50 text-gray-900 cursor-not-allowed"
                   />
                 </div>
                 <p className="text-xs text-gray-500 mt-1">PIN cannot be changed</p>
@@ -130,7 +130,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
               {/* First Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-900 mb-1">
                   First Name <span className="text-red-500">*</span>
                 </label>
                 <div className="relative">
@@ -139,7 +139,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                     type="text"
                     value={formData.name || ''}
                     onChange={(e) => handleInputChange('name', e.target.value)}
-                    className={`w-full pl-10 pr-4 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 ${
+                    className={`w-full pl-10 pr-4 py-2 border rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900 ${
                       errors.name ? 'border-red-500' : 'border-gray-300'
                     }`}
                     placeholder="Enter first name"
@@ -152,7 +152,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
               {/* Last Name */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-900 mb-1">
                   Last Name
                 </label>
                 <div className="relative">
@@ -161,7 +161,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                     type="text"
                     value={formData.lastName || ''}
                     onChange={(e) => handleInputChange('lastName', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     placeholder="Enter last name"
                   />
                 </div>
@@ -169,7 +169,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
               {/* Email */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-900 mb-1">
                   Email
                 </label>
                 <div className="relative">
@@ -178,7 +178,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                     type="email"
                     value={formData.email || ''}
                     onChange={(e) => handleInputChange('email', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     placeholder="Enter email address"
                   />
                 </div>
@@ -186,7 +186,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
               {/* Phone */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
+                <label className="block text-sm font-medium text-gray-900 mb-1">
                   Phone
                 </label>
                 <div className="relative">
@@ -195,7 +195,7 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                     type="tel"
                     value={formData.mobilePhone || ''}
                     onChange={(e) => handleInputChange('mobilePhone', e.target.value)}
-                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500"
+                    className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-blue-500 focus:border-blue-500 text-gray-900"
                     placeholder="Enter phone number"
                   />
                 </div>
@@ -203,8 +203,8 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
               {/* Department */}
               <div>
-                <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Department
+                <label className="block text-sm font-medium text-gray-900 mb-1">
+                  Branch
                 </label>
                 <BranchSelect
                   value={selectedBranch}
