@@ -38,6 +38,12 @@ A comprehensive banking access control system that integrates with the ZKTECO Bi
 - **Real-time API Integration**: Immediate synchronization with ZK system
 - **Level Validation**: Required selection with door access preview
 
+#### **6. User Management & Relationships**
+- **Couple Checkbox**: Toggle to show/hide spouse accounts (PINs ending with 's1')
+- **Visual Distinction**: Pink avatars and "Spouse" badges for spouse accounts
+- **Relationship Tracking**: Principal-spouse linkage via PIN suffixes
+- **Filtered Export**: Export respects current view (principals only or all users)
+
 #### **6. API Infrastructure**
 - **8 API Routes Created**:
   - `/api/persons` - Person CRUD operations (POST for creation, GET for listing)

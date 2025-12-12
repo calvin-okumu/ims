@@ -55,6 +55,12 @@
 - **✅ Proxy Architecture**: Next.js API routes handle CORS and SSL
 - **✅ Error Handling**: Comprehensive error recovery with user feedback
 
+#### **7. User Management & Relationships**
+- **✅ Couple Checkbox**: Toggle to show/hide spouse accounts (PINs ending with 's1')
+- **✅ Visual Distinction**: Pink avatars and "Spouse" badges for spouse accounts
+- **✅ Relationship Tracking**: Principal-spouse linkage via PIN suffixes
+- **✅ Filtered Export**: Export respects current view (principals only or all users)
+
 ---
 
 ## 📁 Project Structure
@@ -340,6 +346,12 @@ NEXT_PUBLIC_ZKBIO_API_TOKEN=your_api_token_here
 - Graceful error recovery with fallback data
 - Modular component architecture with React hooks
 
+### **✅ Advanced User Management**
+- Principal-spouse relationship tracking via PIN patterns
+- Dynamic filtering with visual relationship indicators
+- Export functionality respecting current view filters
+- Enhanced user experience with clear data presentation
+
 ---
 
 ## 🚀 Production Ready
@@ -392,7 +404,8 @@ NEXT_PUBLIC_ZKBIO_API_TOKEN=your_api_token_here
 
 ### **Feature Completeness**
 - **PIN-based Registration**: ✅ Account numbers as unique identifiers
-- **Couple Management**: ✅ Principal-spouse linkage with inheritance
+- **Couple Management**: ✅ Principal-spouse linkage with inheritance and filtering
+- **User Interface**: ✅ Couple checkbox with visual relationship indicators
 - **Branch Management**: ✅ Hierarchical department structure
 - **Biometric Integration**: ✅ Optional fingerprint template management
 - **Access Control**: ✅ Automatic level assignment and cascade removal
@@ -406,6 +419,7 @@ NEXT_PUBLIC_ZKBIO_API_TOKEN=your_api_token_here
 - **Bulk Operations**: Import/export user data and batch registrations
 - **Advanced Search**: Filter and search across all registered users
 - **User History**: Track registration and modification history
+- **Relationship Management**: Enhanced family relationship features
 
 ### **Advanced Biometric Features**
 - **Multiple Fingerprints**: Support for multiple biometric templates per user
@@ -460,4 +474,4 @@ Key achievements include:
 - **Modern UI/UX**: Responsive dark theme with professional component design
 - **Production Ready**: Full TypeScript coverage, comprehensive error handling, and performance optimizations
 
-The implementation demonstrates enterprise-grade software development with type safety, modular architecture, and maintainable code patterns. All core functionality has been implemented and tested, providing a solid foundation for immediate deployment and future enhancements.
+The implementation demonstrates enterprise-grade software development with type safety, modular architecture, and maintainable code patterns. Advanced user management features including principal-spouse relationship tracking and dynamic filtering provide enhanced usability for banking environments. All core functionality has been implemented and tested, providing a solid foundation for immediate deployment and future enhancements.
