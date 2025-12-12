@@ -34,6 +34,15 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
   const [errors, setErrors] = useState<Partial<Record<keyof Person, string>>>({});
 
+  // Helper function to split full name into first and last name
+  const splitFullName = (fullName: string) => {
+    if (!fullName) return { firstName: '', lastName: '' };
+    const parts = fullName.trim().split(' ');
+    const firstName = parts[0] || '';
+    const lastName = parts.slice(1).join(' ') || '';
+    return { firstName, lastName };
+  };
+
   // Fetch spouse data
   const fetchSpouseData = async (spousePin: string) => {
     try {
@@ -51,9 +60,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
   // Populate form when user changes
   useEffect(() => {
     if (user && isOpen) {
+      const { firstName, lastName } = splitFullName(user.name || '');
       setFormData({
-        name: user.name || '',
-        lastName: user.lastName || '',
+        name: firstName,
+        lastName: lastName,
         email: user.email || '',
         mobilePhone: user.mobilePhone || '',
         deptCode: user.deptCode || ''
@@ -80,9 +90,10 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
         fetchSpouseData(spousePin).then(spouse => {
           setSpouseData(spouse);
           if (spouse) {
+            const { firstName, lastName } = splitFullName(spouse.name || '');
             setSpouseFormData({
-              name: spouse.name || '',
-              lastName: spouse.lastName || '',
+              name: firstName,
+              lastName: lastName,
               email: spouse.email || '',
               mobilePhone: spouse.mobilePhone || ''
             });
@@ -123,15 +134,25 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
     setIsSubmitting(true);
     try {
+      // Prepare principal data with combined name
+      const principalData = {
+        ...formData,
+        name: `${formData.name?.trim() || ''} ${formData.lastName?.trim() || ''}`.trim()
+      };
+
       // Update principal user
-      await updatePerson(user.pin, formData);
+      await updatePerson(user.pin, principalData);
 
       // Update spouse if spouse data exists
       if (spouseData && spouseFormData.name) {
-        await updatePerson(spouseData.pin, spouseFormData);
+        const spouseUpdateData = {
+          ...spouseFormData,
+          name: `${spouseFormData.name?.trim() || ''} ${spouseFormData.lastName?.trim() || ''}`.trim()
+        };
+        await updatePerson(spouseData.pin, spouseUpdateData);
       }
 
-      onUserUpdated({ ...user, ...formData });
+      onUserUpdated({ ...user, ...principalData });
       onClose();
     } catch (error) {
       console.error('Failed to update user:', error);
