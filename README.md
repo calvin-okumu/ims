@@ -43,6 +43,8 @@ A comprehensive banking access control system that integrates with the ZKTECO Bi
 - **Visual Distinction**: Pink avatars and "Spouse" badges for spouse accounts
 - **Relationship Tracking**: Principal-spouse linkage via PIN suffixes
 - **Filtered Export**: Export respects current view (principals only or all users)
+- **Edit Modal**: Dedicated modal for user editing with form validation
+- **Personnel Dismissal**: Safe user deletion with confirmation dialog
 
 #### **6. API Infrastructure**
 - **8 API Routes Created**:

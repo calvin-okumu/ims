@@ -60,6 +60,8 @@
 - **✅ Visual Distinction**: Pink avatars and "Spouse" badges for spouse accounts
 - **✅ Relationship Tracking**: Principal-spouse linkage via PIN suffixes
 - **✅ Filtered Export**: Export respects current view (principals only or all users)
+- **✅ Edit Modal**: Dedicated modal interface for user editing with validation
+- **✅ Personnel Dismissal**: Safe user deletion using ZK API personnel dismissal
 
 ---
 
@@ -350,7 +352,9 @@ NEXT_PUBLIC_ZKBIO_API_TOKEN=your_api_token_here
 - Principal-spouse relationship tracking via PIN patterns
 - Dynamic filtering with visual relationship indicators
 - Export functionality respecting current view filters
-- Enhanced user experience with clear data presentation
+- Dedicated edit modal with comprehensive form validation
+- Personnel dismissal with confirmation dialogs
+- Enhanced user experience with professional modal interfaces
 
 ---
 
@@ -406,6 +410,8 @@ NEXT_PUBLIC_ZKBIO_API_TOKEN=your_api_token_here
 - **PIN-based Registration**: ✅ Account numbers as unique identifiers
 - **Couple Management**: ✅ Principal-spouse linkage with inheritance and filtering
 - **User Interface**: ✅ Couple checkbox with visual relationship indicators
+- **Edit Modal**: ✅ Dedicated modal editing with comprehensive validation
+- **Personnel Dismissal**: ✅ Safe user deletion with confirmation dialogs
 - **Branch Management**: ✅ Hierarchical department structure
 - **Biometric Integration**: ✅ Optional fingerprint template management
 - **Access Control**: ✅ Automatic level assignment and cascade removal
@@ -474,4 +480,4 @@ Key achievements include:
 - **Modern UI/UX**: Responsive dark theme with professional component design
 - **Production Ready**: Full TypeScript coverage, comprehensive error handling, and performance optimizations
 
-The implementation demonstrates enterprise-grade software development with type safety, modular architecture, and maintainable code patterns. Advanced user management features including principal-spouse relationship tracking and dynamic filtering provide enhanced usability for banking environments. All core functionality has been implemented and tested, providing a solid foundation for immediate deployment and future enhancements.
+The implementation demonstrates enterprise-grade software development with type safety, modular architecture, and maintainable code patterns. Advanced user management features including principal-spouse relationship tracking, dynamic filtering, dedicated edit modals, and personnel dismissal provide comprehensive usability for banking environments. Professional modal interfaces and comprehensive form validation ensure data integrity and user experience excellence. All core functionality has been implemented and tested, providing a solid foundation for immediate deployment and future enhancements.
