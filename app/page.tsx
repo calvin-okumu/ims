@@ -1,6 +1,6 @@
 'use client';
 
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { UserPlus, Fingerprint, DoorOpen, Users, Database, CheckCircle, XCircle, AlertCircle, Shield, Plus, Trash2, MapPin, Clock, Activity, RefreshCw, User } from 'lucide-react';
 import { useAreaBasedDoorSelection } from '../hooks/useAreaBasedDoorSelection';
 import { getAccessLevels } from '../services/accessLevelService';
@@ -159,9 +159,9 @@ export default function BiometricAccessApp() {
     }
   };
 
-  const showNotification = (message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') => {
-    setNotification({ message, type });
-  };
+  const showNotification = useCallback((message: string, type: 'success' | 'error' | 'warning' | 'info' = 'success') => {
+    setTimeout(() => setNotification({ message, type }), 0);
+  }, []);
 
   const handleInputChange = (e: React.ChangeEvent<HTMLInputElement | HTMLSelectElement>) => {
     const { name, value } = e.target;
@@ -207,7 +207,7 @@ export default function BiometricAccessApp() {
   const registerUser = async () => {
     setLoading(prev => ({ ...prev, registration: true }));
     // Validation checks with detailed error messages
-    const errors = [];
+    const errors: string[] = [];
 
     if (!formData.accountNumber.trim()) {
       errors.push('Account number (PIN) is required');
@@ -272,7 +272,7 @@ export default function BiometricAccessApp() {
     try {
       // Register principal
       const principalResponse = await fetch('/api/persons', {
-        method: 'PUT',
+        method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
@@ -312,7 +312,7 @@ export default function BiometricAccessApp() {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            levelIds: [parseInt(formData.selectedAccessLevel)],
+            levelIds: [formData.selectedAccessLevel],
             pin: formData.accountNumber
           })
         });
@@ -325,7 +325,7 @@ export default function BiometricAccessApp() {
       // Register spouse if couple registration
       if (registrationType === 'couple' && (formData.spouseFirstName.trim() || formData.spouseLastName.trim())) {
         const spouseResponse = await fetch('/api/persons', {
-          method: 'PUT',
+          method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
@@ -362,7 +362,7 @@ export default function BiometricAccessApp() {
                 'Content-Type': 'application/json',
               },
               body: JSON.stringify({
-                levelIds: [parseInt(formData.selectedAccessLevel)],
+                levelIds: [formData.selectedAccessLevel],
                 pin: `${formData.accountNumber}s1`
               })
             });

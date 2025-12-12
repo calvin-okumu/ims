@@ -78,7 +78,7 @@ This application successfully integrates with **ZKBio CVSecurity API v2.0** usin
 
 #### Person Management (v2.0)
 - `POST /api/persons` → `POST v2/person/getPersonList` - ✅ **WORKING** - Lists persons with pagination and filtering
-- `PUT /api/persons` → `POST v2/person/add` - ✅ **WORKING** - Creates new person with PIN, branch, and access level
+- `POST /api/persons` → `POST person/add` - ✅ **WORKING** - Creates new person with PIN, branch, and access level
 - `POST /api/persons` → `POST v2/person/getPersonList` - ✅ **WORKING** - Legacy person list retrieval
 - `GET v2/person/get/{pin}` - Get person by PIN (not implemented yet)
 - `PUT v2/person/update/{pin}` - Update person (not implemented yet)
@@ -91,7 +91,7 @@ This application successfully integrates with **ZKBio CVSecurity API v2.0** usin
 
 #### Access Control (v2.0)
 - `GET /api/access-levels` → `GET v2/accLevel/list` - ✅ **WORKING** - Lists access levels
-- `POST /api/access-levels/assign` → `POST accLevel/addLevelPerson` - ✅ **WORKING** - Assigns access levels to persons
+- `POST /api/access-levels/assign` → `POST accLevel/addLevelPerson` - ✅ **WORKING** - Assigns access levels to persons using full string IDs
 - `DELETE /api/access-levels/assign` → `POST accLevel/deleteLevel` - ✅ **WORKING** - Removes access levels from persons
 - `POST accLevel/addLevel` - Create access level (not implemented yet)
 - `POST accLevel/deleteLevel` - Delete access level (not implemented yet)

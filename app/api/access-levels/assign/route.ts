@@ -28,7 +28,7 @@ export async function POST(request: NextRequest) {
 
     const response = await axiosInstance.post(apiUrl, null, {
       params: {
-        levelIds: Array.isArray(levelIds) ? levelIds.join(',') : levelIds,
+        levelIds: Array.isArray(levelIds) ? levelIds.join(',') : levelIds.toString(),
         pin: pin
       }
     });
@@ -76,7 +76,7 @@ export async function DELETE(request: NextRequest) {
 
     const response = await axiosInstance.post(apiUrl, null, {
       params: {
-        levelIds: Array.isArray(levelIds) ? levelIds.join(',') : levelIds,
+        levelIds: Array.isArray(levelIds) ? levelIds.join(',') : levelIds.toString(),
         pin: pin
       }
     });

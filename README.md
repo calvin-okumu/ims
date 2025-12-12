@@ -33,18 +33,18 @@ A comprehensive banking access control system that integrates with the ZKTECO Bi
 - **Finger Selection**: Support for all 10 fingers with quality metrics
 
 #### **5. Access Control Management**
-- **Access Level Assignment**: Automatic assignment during person creation
+- **Access Level Assignment**: Automatic assignment during person creation using full string IDs
 - **Cascade Removal**: Principal access removal affects linked spouse accounts
 - **Real-time API Integration**: Immediate synchronization with ZK system
 - **Level Validation**: Required selection with door access preview
 
 #### **6. API Infrastructure**
 - **8 API Routes Created**:
-  - `/api/persons` - Person CRUD operations
+  - `/api/persons` - Person CRUD operations (POST for creation, GET for listing)
   - `/api/biometric` - Biometric template management
   - `/api/branches` - Branch/department management
   - `/api/access-levels` - Access level listing
-  - `/api/access-levels/assign` - Access level assignment
+  - `/api/access-levels/assign` - Access level assignment (full string IDs)
 - **Proxy Architecture**: Next.js API routes handle CORS and SSL
 - **Error Handling**: Comprehensive error recovery with user feedback
 
@@ -108,7 +108,7 @@ Feedback ← Response ← Success ← Confirmation
 #### **✅ Fully Functional**
 - **PIN-based registration** with validation and spouse generation
 - **Branch selection** with hierarchical dropdown and API integration
-- **Access level assignment** with real-time API calls
+- **Access level assignment** with real-time API calls using full string IDs
 - **Biometric upload** (optional) with template management
 - **API proxy routes** with proper error handling
 - **Tab navigation** with 5 functional tabs
