@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { X, User, Mail, Phone, Building, Hash, Save, Loader2 } from 'lucide-react';
-import { updatePerson } from '../services/personService';
+import { updatePerson, getPersons } from '../services/personService';
 import { Person } from '../types/api';
 import BranchSelect from './BranchSelect';
 import BranchCreator from './BranchCreator';
@@ -16,6 +16,13 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [showBranchCreator, setShowBranchCreator] = useState(false);
   const [selectedBranch, setSelectedBranch] = useState('');
+  const [spouseData, setSpouseData] = useState<Person | null>(null);
+  const [spouseFormData, setSpouseFormData] = useState<Partial<Person>>({
+    name: '',
+    lastName: '',
+    email: '',
+    mobilePhone: ''
+  });
 
   const [formData, setFormData] = useState<Partial<Person>>({
     name: '',
@@ -26,6 +33,20 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
   });
 
   const [errors, setErrors] = useState<Partial<Record<keyof Person, string>>>({});
+
+  // Fetch spouse data
+  const fetchSpouseData = async (spousePin: string) => {
+    try {
+      // Try to find spouse in current user list (this is a limitation of the current API)
+      // In a real implementation, you'd have a proper API endpoint to fetch related users
+      const allUsers = await getPersons(1, 1000); // Fetch all users
+      const spouse = allUsers.find(u => u.pin === spousePin);
+      return spouse || null;
+    } catch (error) {
+      console.error('Failed to fetch spouse data:', error);
+      return null;
+    }
+  };
 
   // Populate form when user changes
   useEffect(() => {
@@ -39,6 +60,42 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
       });
       setSelectedBranch(user.deptCode || '');
       setErrors({});
+
+      // Check for spouse data
+      const isSpouse = user.pin.endsWith('s1');
+      if (isSpouse) {
+        // This is a spouse, find the principal
+        const principalPin = user.pin.slice(0, -2); // Remove 's1'
+        // For now, we'll just reset spouse data since we don't have a way to fetch the principal
+        setSpouseData(null);
+        setSpouseFormData({
+          name: '',
+          lastName: '',
+          email: '',
+          mobilePhone: ''
+        });
+      } else {
+        // This is a principal, check if spouse exists
+        const spousePin = `${user.pin}s1`;
+        fetchSpouseData(spousePin).then(spouse => {
+          setSpouseData(spouse);
+          if (spouse) {
+            setSpouseFormData({
+              name: spouse.name || '',
+              lastName: spouse.lastName || '',
+              email: spouse.email || '',
+              mobilePhone: spouse.mobilePhone || ''
+            });
+          } else {
+            setSpouseFormData({
+              name: '',
+              lastName: '',
+              email: '',
+              mobilePhone: ''
+            });
+          }
+        });
+      }
     }
   }, [user, isOpen]);
 
@@ -66,7 +123,14 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
 
     setIsSubmitting(true);
     try {
+      // Update principal user
       await updatePerson(user.pin, formData);
+
+      // Update spouse if spouse data exists
+      if (spouseData && spouseFormData.name) {
+        await updatePerson(spouseData.pin, spouseFormData);
+      }
+
       onUserUpdated({ ...user, ...formData });
       onClose();
     } catch (error) {
@@ -215,6 +279,94 @@ const EditUserModal: React.FC<EditUserModalProps> = ({ isOpen, onClose, user, on
                   onCreateNew={() => setShowBranchCreator(true)}
                 />
               </div>
+
+              {/* Spouse Information (if applicable) */}
+              {user && !user.pin.endsWith('s1') && (
+                <div className="mt-8 pt-6 border-t border-gray-200">
+                  <h4 className="text-lg font-medium text-gray-900 mb-4 flex items-center">
+                    <User className="w-5 h-5 mr-2 text-pink-600" />
+                    Spouse Information
+                  </h4>
+
+                  {spouseData ? (
+                    <div className="space-y-4">
+                      {/* Spouse First Name */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-1">
+                          Spouse First Name
+                        </label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                          <input
+                            type="text"
+                            value={spouseFormData.name || ''}
+                            onChange={(e) => setSpouseFormData(prev => ({ ...prev, name: e.target.value }))}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900"
+                            placeholder="Enter spouse first name"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Spouse Last Name */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-1">
+                          Spouse Last Name
+                        </label>
+                        <div className="relative">
+                          <User className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                          <input
+                            type="text"
+                            value={spouseFormData.lastName || ''}
+                            onChange={(e) => setSpouseFormData(prev => ({ ...prev, lastName: e.target.value }))}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900"
+                            placeholder="Enter spouse last name"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Spouse Email */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-1">
+                          Spouse Email
+                        </label>
+                        <div className="relative">
+                          <Mail className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                          <input
+                            type="email"
+                            value={spouseFormData.email || ''}
+                            onChange={(e) => setSpouseFormData(prev => ({ ...prev, email: e.target.value }))}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900"
+                            placeholder="Enter spouse email address"
+                          />
+                        </div>
+                      </div>
+
+                      {/* Spouse Phone */}
+                      <div>
+                        <label className="block text-sm font-medium text-gray-900 mb-1">
+                          Spouse Phone
+                        </label>
+                        <div className="relative">
+                          <Phone className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 w-4 h-4" />
+                          <input
+                            type="tel"
+                            value={spouseFormData.mobilePhone || ''}
+                            onChange={(e) => setSpouseFormData(prev => ({ ...prev, mobilePhone: e.target.value }))}
+                            className="w-full pl-10 pr-4 py-2 border border-gray-300 rounded-md focus:ring-pink-500 focus:border-pink-500 text-gray-900"
+                            placeholder="Enter spouse phone number"
+                          />
+                        </div>
+                      </div>
+                    </div>
+                  ) : (
+                    <div className="text-center py-8 text-gray-500">
+                      <User className="w-12 h-12 mx-auto mb-3 text-gray-300" />
+                      <p className="text-sm">No spouse information found</p>
+                      <p className="text-xs mt-1">Spouse data will appear here if registered</p>
+                    </div>
+                  )}
+                </div>
+              )}
 
               {/* Action Buttons */}
               <div className="flex justify-end space-x-3 pt-6 border-t border-gray-200">
