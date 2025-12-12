@@ -235,9 +235,7 @@ export default function BiometricAccessApp() {
       errors.push('Please enter a valid phone number for principal');
     }
 
-    if (!formData.fingerprintData) {
-      errors.push('Please capture principal fingerprint before registration');
-    }
+    // Fingerprint is optional - can be added during editing
 
     if (!formData.selectedAccessLevel) {
       errors.push('Please select an access level');
@@ -886,7 +884,7 @@ export default function BiometricAccessApp() {
             <div className="mb-6 p-4 sm:p-6 bg-slate-700/50 rounded-lg border border-slate-600">
               <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                 <Fingerprint className="w-5 h-5 mr-2 text-purple-400" />
-                Principal Fingerprint Registration (ZKBio)
+                Principal Fingerprint Registration (Optional)
               </h3>
 
               <div className="mb-4">
@@ -929,7 +927,7 @@ export default function BiometricAccessApp() {
                   className="bg-purple-600 hover:bg-purple-700 text-white px-4 sm:px-6 py-3 rounded-lg flex items-center gap-2 transition-colors text-sm sm:text-base"
                 >
                   <Fingerprint size={20} />
-                  Capture Fingerprint
+                  Capture Fingerprint (Optional)
                 </button>
               </div>
             </div>
@@ -939,7 +937,7 @@ export default function BiometricAccessApp() {
               <div className="mb-6 p-4 sm:p-6 bg-blue-900/20 rounded-lg border border-blue-700">
                 <h3 className="text-lg font-semibold text-white mb-4 flex items-center">
                   <Fingerprint className="w-5 h-5 mr-2 text-purple-400" />
-                  Spouse Fingerprint Registration (ZKBio)
+                  Spouse Fingerprint Registration (Optional)
                 </h3>
 
                 <div className="mb-4">
@@ -996,7 +994,7 @@ export default function BiometricAccessApp() {
                     className="bg-purple-600 hover:bg-purple-700 text-white px-4 sm:px-6 py-3 rounded-lg flex items-center gap-2 transition-colors text-sm sm:text-base"
                   >
                     <Fingerprint size={20} />
-                    Capture Fingerprint
+                    Capture Fingerprint (Optional)
                   </button>
                 </div>
               </div>

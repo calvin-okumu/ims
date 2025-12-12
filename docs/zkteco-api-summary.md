@@ -208,7 +208,7 @@ The system now uses PIN-based account numbers with automatic spouse relationship
 ### Registration System
 - **PIN-Based Registration**: Account numbers serve as ZK API PINs (max 15 characters)
 - **Couple Registration**: Principal + spouse with automatic "s1" suffix generation
-- **Biometric Upload**: Real-time fingerprint template upload via `bioTemplate/add` (v1)
+- **Biometric Upload**: Optional fingerprint template upload via `bioTemplate/add` (v1) - can be done during editing
 - **Access Assignment**: Automatic access level assignment during registration
 - **Branch Management**: Hierarchical department selection via `department/getDepartmentList` (v1)
 

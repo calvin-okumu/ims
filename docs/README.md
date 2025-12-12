@@ -8,7 +8,7 @@ This is a Next.js-based Banking Access Control System that integrates with the Z
 
 - **PIN-Based Registration**: Account numbers serve as unique PINs for ZK API integration
 - **Couple Registration**: Principal and spouse registration with automatic relationship tracking
-- **Biometric Integration**: Real-time fingerprint template upload and retrieval via ZK API
+- **Biometric Integration**: Optional fingerprint template upload and retrieval via ZK API (can be added during editing)
 - **Access Level Management**: Automatic assignment and cascade removal for linked accounts
 - **Branch Management**: Hierarchical department/branch structure with creation capabilities
 - **Real-time API Integration**: Direct integration with ZKTECO BioCVSecurity API endpoints
@@ -164,7 +164,7 @@ The proxy automatically:
 #### Advanced Registration System
 - **PIN-Based Registration**: Account numbers serve as ZK API PINs (max 15 characters)
 - **Couple Registration**: Principal + spouse with automatic "s1" suffix generation
-- **Biometric Integration**: Real-time fingerprint upload via ZK API
+- **Biometric Integration**: Optional fingerprint upload via ZK API (can be added during editing)
 - **Access Level Assignment**: Automatic assignment during registration
 - **Branch Management**: Hierarchical department structure with creation
 - **Relationship Tracking**: Principal-spouse linkage via PIN for access management
