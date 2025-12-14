@@ -1,7 +1,7 @@
 'use client';
 
 import React, { useState, useEffect, useCallback } from 'react';
-import { UserPlus, Fingerprint, DoorOpen, Users, Database, CheckCircle, XCircle, AlertCircle, Shield, Plus, Trash2, MapPin, Clock, Activity, RefreshCw, User } from 'lucide-react';
+import { UserPlus, Fingerprint, DoorOpen, Users, Database, CheckCircle, XCircle, AlertCircle, Shield, Plus, Trash2, MapPin, Clock, Activity, RefreshCw, User, X } from 'lucide-react';
 import { useAreaBasedDoorSelection } from '../hooks/useAreaBasedDoorSelection';
 import { getAccessLevels } from '../services/accessLevelService';
 import { getPersons } from '../services/personService';
@@ -17,6 +17,8 @@ import BranchSelect from '../components/BranchSelect';
 import { useTheme } from '../components/ThemeProvider';
 import { Sun, Moon } from 'lucide-react';
 import { uploadBiometricTemplate } from '../services/biometricService';
+import { webUSBScanner } from '../services/webUSBScannerService';
+import ScannerStatusIndicator from '../components/ScannerStatusIndicator';
 
 // Form interfaces
 interface FormData {
@@ -85,7 +87,8 @@ export default function BiometricAccessApp() {
         persons: false,
         readers: false,
         registration: false,
-        accessLevelCreation: false
+        accessLevelCreation: false,
+        fingerprint: false
     });
 
     // Modal states
@@ -193,20 +196,45 @@ export default function BiometricAccessApp() {
         }));
     };
 
-    const simulateFingerprintCapture = () => {
-        const mockFingerprintData = {
-            template: 'mock_fingerprint_template_data_base64_encoded_string',
-            quality: 95,
-            capturedAt: new Date().toISOString(),
-            bioType: 1,
-            version: '10.0',
-            templateNo: '3'
-        };
-        setFormData(prev => ({
-            ...prev,
-            fingerprintData: mockFingerprintData
-        }));
-        showNotification('Fingerprint captured successfully', 'success');
+    const captureFingerprint = async () => {
+        setLoading(prev => ({ ...prev, fingerprint: true }));
+
+        try {
+            // Check if scanner is connected
+            const scannerStatus = webUSBScanner.getStatus();
+            if (!scannerStatus.connected) {
+                // Try to connect first
+                const connected = await webUSBScanner.connectDevice();
+                if (!connected) {
+                    throw new Error('Scanner not connected. Please connect the ZK8500R scanner first.');
+                }
+            }
+
+            // Capture fingerprint
+            const fingerprintData = await webUSBScanner.captureFingerprint(
+                parseInt(formData.fingerIndex) || 0
+            );
+
+            setFormData(prev => ({
+                ...prev,
+                fingerprintData
+            }));
+
+            showNotification(`Fingerprint captured successfully (Quality: ${fingerprintData.quality}%)`, 'success');
+        } catch (error) {
+            console.error('Fingerprint capture failed:', error);
+            const errorMessage = error instanceof Error ? error.message : 'Failed to capture fingerprint';
+            showNotification(errorMessage, 'error');
+
+            // If it's a connection issue, suggest connecting the scanner
+            if (errorMessage.includes('not connected')) {
+                setTimeout(() => {
+                    showNotification('Click the scanner status indicator to connect your device', 'info');
+                }, 2000);
+            }
+        } finally {
+            setLoading(prev => ({ ...prev, fingerprint: false }));
+        }
     };
 
     const registerUser = async () => {
@@ -573,6 +601,9 @@ export default function BiometricAccessApp() {
                         <div>
                             <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">ZKBio Security Access Control</h1>
                             <p className="text-slate-400 text-sm sm:text-base">Private Banking Customer Management</p>
+                            <div className="mt-3">
+                                <ScannerStatusIndicator />
+                            </div>
                         </div>
                         <div className="flex gap-3 w-full sm:w-auto">
                             <button
@@ -988,7 +1019,7 @@ export default function BiometricAccessApp() {
 
                                 <div className="flex items-end">
                                     <button
-                                        onClick={simulateFingerprintCapture}
+                                        onClick={captureFingerprint}
                                         disabled={loading.fingerprint}
                                         className="w-full bg-purple-600 hover:bg-purple-700 disabled:bg-purple-800 disabled:cursor-not-allowed text-white px-6 py-3 rounded-lg flex items-center justify-center gap-2 transition-colors text-sm sm:text-base"
                                     >
