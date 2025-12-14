@@ -41,15 +41,57 @@ export const getPerson = async (pin: string): Promise<Person> => {
 };
 
 export const createPerson = async (person: PersonCreateRequest): Promise<Person> => {
-  const response = await apiClient.post('/api/v2/person/add', { person });
-  return response.data;
+  try {
+    // Use Next.js API proxy to avoid CORS issues
+    const response = await fetch('/api/persons', {
+      method: 'PUT',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify(person)
+    });
+
+    if (!response.ok) {
+      throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+    }
+
+    const data = await response.json();
+
+    // Handle ZKBio response format
+    if (data.code === 0) {
+      return data.data;
+    } else {
+      throw new Error(data.message || 'API Error');
+    }
+  } catch (error) {
+    console.error('Failed to create person:', error);
+    throw error;
+  }
 };
 
 export const updatePerson = async (pin: string, person: Partial<Person>): Promise<Person> => {
-  const response = await apiClient.put(`/api/v2/person/update/${pin}`, person);
+  const response = await apiClient.post(`/api/person/add`, { ...person, pin });
   return response.data;
 };
 
 export const deletePerson = async (pin: string): Promise<void> => {
-  await apiClient.post(`/api/v2/person/delete/${pin}`);
+  // Use the v1 endpoint for person deletion (personnel dismissal)
+  const response = await fetch('/api/persons/delete', {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify({ pin })
+  });
+
+  if (!response.ok) {
+    throw new Error(`API request failed: ${response.status} ${response.statusText}`);
+  }
+
+  const data = await response.json();
+
+  // Handle ZKBio response format
+  if (data.code !== 0) {
+    throw new Error(data.message || 'API Error');
+  }
 };

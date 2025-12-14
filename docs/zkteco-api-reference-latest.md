@@ -1,50 +1,33 @@
-# ZKBio API Documentation
+# ZKBio API Endpoints Used
 
 ## Overview
 
-This document provides comprehensive API documentation for the ZKBio Access Control System. The API allows management of access levels, users, devices, doors, transactions, and biometric data.
+This document lists the ZKBio CVSecurity API endpoints currently used by the Banking Access Control System.
 
-**Base URL**: `https://192.168.0.93:8098/api`  
-**API Version**: 2.0, 3.0 (some endpoints have multiple versions)  
-**Content-Type**: `application/json`
+**Base URL**: `https://192.168.183.114:8098/api`
+**Authentication**: Access token via URL parameter (`access_token=TOKEN`)
+**Proxy**: Next.js API routes handle CORS and SSL issues
 
-## Authentication
+## Endpoints Used
 
-All API requests require proper authentication. The ZKBio CVSecurity API uses **access token authentication** via URL parameters.
+### Person Management (v2)
+- `POST person/getPersonList` - Get persons with filtering
+- `POST person/add` - Create new person
 
-### ✅ Current Configuration (Working)
+### Biometric Templates
+- `POST bioTemplate/add` - Upload fingerprint template (v1)
+- `GET v2/bioTemplate/getFgListByPin/{pin}` - Get fingerprint templates (v2)
 
-- **Server URL**: `https://192.168.183.114:8098`
-- **Access Token**: `8D1E99707293387C5B3BFC7291AD38CB`
-- **Authentication Method**: URL parameter (`access_token=TOKEN`)
-- **Proxy Implementation**: Next.js API routes handle CORS and SSL
+### Access Levels (v2)
+- `GET accLevel/list` - List access levels
+- `POST accLevel/addLevelPerson` - Assign access level to person
+- `POST accLevel/deleteLevel` - Remove access level from person
 
-### Setup Process (Already Completed)
+### Departments (v1)
+- `POST department/getDepartmentList` - List departments hierarchically
+- `POST department/add` - Create new department
 
-1. **Admin Panel Access**: ✅ Logged into ZKBio CVSecurity as superuser
-2. **Navigate to API Authorization**: ✅ System → Authority Management → API Authorization
-3. **Create New Client**: ✅ API client created with token `8D1E99707293387C5B3BFC7291AD38CB`
-4. **Enable Access**: ✅ "Browse API" enabled for API operations
-
-### Authentication Method
-
-**URL Parameter Authentication** (Required):
-```
-https://192.168.183.114:8098/api/v2/endpoint?access_token=8D1E99707293387C5B3BFC7291AD38CB
-```
-
-**Example**:
-```
-GET /api/v2/accLevel/list?pageNo=1&pageSize=10&access_token=8D1E99707293387C5B3BFC7291AD38CB
-```
-
-**Important Notes**:
-- Access token must be included in **every API request**
-- Token is passed as URL parameter, not in Authorization header
-- Client secret from admin panel is your access token
-- Multiple API clients can be created with different tokens
-
-### Response Format
+## Response Format
 
 All API responses follow this structure:
 ```json
@@ -57,35 +40,12 @@ All API responses follow this structure:
 }
 ```
 
-**Success Codes**:
+**Response Codes**:
 - `code: 0` = Success
 - `code: 400` = Bad Request
 - `code: 401` = Unauthorized
 - `code: 403` = Forbidden
 - `code: 404` = Not Found
-
-### ✅ Working Endpoints
-
-#### Person Management
-- `POST /api/v2/person/getPersonList` - ✅ **WORKING** (5 users loaded)
-- Returns: PIN, name, department, email, access levels
-
-#### Access Level Management
-- `GET /api/v2/accLevel/list` - ✅ **WORKING** (1 access level loaded)
-- Returns: Access level ID and name
-
-#### Reader Management
-- `GET /api/v2/reader/list` - ✅ **WORKING** (0 readers configured)
-- Returns: Reader list (empty in current setup)
-
-## API Endpoints
-
-### Access Levels (`/api/accLevel/`)
-
-#### Add Level
-- **Endpoint**: `POST /api/accLevel/addLevel`
-- **Description**: Create or update an access level
-- **Tags**: `AccLevel`
 - **Parameters**: 
   - `accApiLevelAddItems` (array, required): Array of access level items
 - **Responses**: 200, 201, 401, 403, 404
