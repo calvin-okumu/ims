@@ -152,18 +152,11 @@ export default function Dashboard() {
   return (
     <div className="space-y-6">
       {/* Welcome Section */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
-          <p className="text-muted-foreground">
-            Welcome back! Here's what's happening with your access control system.
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <div className="text-sm text-muted-foreground">
-            Last updated: {new Date().toLocaleTimeString()}
-          </div>
-        </div>
+      <div>
+        <h1 className="text-3xl font-bold tracking-tight">Dashboard</h1>
+        <p className="text-muted-foreground">
+          Welcome back! Here's what's happening with your access control system.
+        </p>
       </div>
 
       {/* Stats Grid */}
