@@ -53,17 +53,17 @@ const DefaultErrorFallback: React.FC<{ error: Error; retry: () => void }> = ({ e
   const isApiError = error.message.includes('API') || error.message.includes('network') || error.message.includes('fetch');
 
   return (
-    <div className="min-h-screen bg-gray-50 flex items-center justify-center p-4">
-      <div className="max-w-md w-full bg-white rounded-lg shadow-lg border border-gray-200">
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 flex items-center justify-center p-4">
+      <div className="max-w-md w-full bg-white dark:bg-gray-800 rounded-lg shadow-lg border border-gray-200 dark:border-gray-700">
         <div className="p-6">
           <div className="flex items-center mb-4">
             <AlertTriangle className="w-8 h-8 text-red-500 mr-3" />
-            <h2 className="text-xl font-semibold text-gray-900">
+            <h2 className="text-xl font-semibold text-gray-900 dark:text-white">
               {isApiError ? 'API Connection Error' : 'Something went wrong'}
             </h2>
           </div>
 
-          <p className="text-gray-600 mb-6">
+          <p className="text-gray-600 dark:text-gray-400 mb-6">
             {isApiError
               ? 'Unable to connect to the ZKBio server. Please check your configuration and network connection.'
               : 'An unexpected error occurred. Please try again or contact support if the problem persists.'

@@ -1,58 +1,57 @@
 import apiClient from '../lib/apiClient';
-import { Area, Reader } from '../types/api';
-
-// Fallback data for when API is not available
-const fallbackAreas: Area[] = [
-  { AreaID: 1, Name: 'General', Description: 'General access areas' },
-  { AreaID: 2, Name: 'Secure', Description: 'Secure restricted areas' },
-  { AreaID: 3, Name: 'Premium', Description: 'Premium customer areas' },
-  { AreaID: 4, Name: 'Executive', Description: 'Executive only areas' }
-];
+import { Area } from '../types/api';
 
 export const getAreas = async (): Promise<Area[]> => {
   try {
-    const response = await apiClient.get('/area');
-    return response.data;
-  } catch (error) {
-    console.warn('Failed to fetch areas from API, using fallback data:', error);
-    return fallbackAreas;
-  }
-};
+    const response = await apiClient.get('/door/list');
+    const doors = response.data;
 
-export const getAreaById = async (id: number): Promise<Area> => {
-  try {
-    const response = await apiClient.get(`/area/${id}`);
-    return response.data;
-  } catch (error) {
-    console.warn(`Failed to fetch area ${id} from API, using fallback:`, error);
-    const fallback = fallbackAreas.find(area => area.AreaID === id);
-    if (!fallback) {
-      throw new Error(`Area with ID ${id} not found`);
-    }
-    return fallback;
-  }
-};
+    // Group doors by deviceId and create areas
+    const deviceGroups: { [key: string]: Area } = {};
 
-export const getDoorsByArea = async (areaId: number): Promise<Reader[]> => {
-  try {
-    const response = await apiClient.get(`/area/${areaId}/doors`);
-    return response.data;
+    doors.forEach((door: any, index: number) => {
+      const deviceId = door.deviceId;
+      if (!deviceGroups[deviceId]) {
+        deviceGroups[deviceId] = {
+          AreaID: index + 1,
+          Name: `Device ${deviceId.slice(-4)}`, // Use last 4 chars of deviceId as name
+          Description: `Doors for device ${deviceId}`
+        };
+      }
+    });
+
+    return Object.values(deviceGroups);
   } catch (error) {
-    console.warn(`Failed to fetch doors for area ${areaId} from API, returning empty array:`, error);
+    console.warn('Failed to fetch doors from API:', error);
     return [];
   }
 };
 
-export const createArea = async (area: Omit<Area, 'AreaID'>): Promise<Area> => {
-  const response = await apiClient.post('/area', area);
-  return response.data;
-};
+export const getDoorsByArea = async (areaId: number): Promise<any[]> => {
+  try {
+    const response = await apiClient.get('/door/list');
+    const doors = response.data;
 
-export const updateArea = async (id: number, area: Partial<Area>): Promise<Area> => {
-  const response = await apiClient.put(`/area/${id}`, area);
-  return response.data;
-};
+    // Find the deviceId for this areaId
+    const areas = await getAreas();
+    const area = areas.find(a => a.AreaID === areaId);
 
-export const deleteArea = async (id: number): Promise<void> => {
-  await apiClient.delete(`/area/${id}`);
+    if (!area) return [];
+
+    // Extract deviceId from area name (we stored it as "Device XXXX")
+    const deviceIdMatch = area.Name.match(/Device (\w+)/);
+    if (!deviceIdMatch) return [];
+
+    const deviceIdShort = deviceIdMatch[1];
+    // Find the full deviceId by matching the last 4 chars
+    const deviceId = doors.find((d: any) => d.deviceId.slice(-4) === deviceIdShort)?.deviceId;
+
+    if (!deviceId) return [];
+
+    // Return doors for this device
+    return doors.filter((door: any) => door.deviceId === deviceId);
+  } catch (error) {
+    console.warn(`Failed to fetch doors for area ${areaId} from API:`, error);
+    return [];
+  }
 };

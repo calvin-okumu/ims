@@ -74,52 +74,108 @@ All API responses follow this structure:
 
 This application successfully integrates with **ZKBio CVSecurity API v2.0** using Next.js proxy routes to handle CORS and SSL certificate issues.
 
-### ✅ Working Endpoints (via Proxy)
+### ✅ Working Endpoints (via Proxy) - API v2 where available
 
-#### Person Management (v2.0)
-- `POST /api/persons` → `POST /api/v2/person/getPersonList` - ✅ **WORKING** - Lists persons with pagination
-- `GET /api/v2/person/get/{pin}` - Get person by PIN (not implemented yet)
-- `POST /api/v2/person/add` - Create new person (not implemented yet)
-- `PUT /api/v2/person/update/{pin}` - Update person (not implemented yet)
-- `POST /api/v2/person/delete/{pin}` - Delete person (not implemented yet)
+#### Person Management (v2)
+- `POST /api/persons` → `POST v2/person/getPersonList` - ✅ **WORKING** - Lists persons with pagination and filtering
+- `POST /api/persons` → `POST person/add` - ✅ **WORKING** - Creates new person with PIN, branch, and access level
+- `POST /api/persons` → `POST v2/person/getPersonList` - ✅ **WORKING** - Legacy person list retrieval
+- `GET v2/person/get/{pin}` - Get person by PIN (not implemented yet)
+- `PUT v2/person/update/{pin}` - Update person (not implemented yet)
+- `POST v2/person/delete/{pin}` - Delete person (not implemented yet)
+
+#### Biometric Templates (v1/v2)
+- `PUT /api/biometric` → `POST bioTemplate/add` - ✅ **WORKING** - Uploads fingerprint templates (v1)
+- `GET /api/biometric?pin={pin}` → `GET v2/bioTemplate/getFgListByPin/{pin}` - ✅ **WORKING** - Retrieves biometric templates (v2)
+- `POST v2/bioTemplate/deleteByPin` - Delete templates by PIN (not implemented yet)
 
 #### Access Control (v2.0)
-- `GET /api/access-levels` → `GET /api/v2/accLevel/list` - ✅ **WORKING** - Lists access levels
-- `POST /api/accLevel/addLevel` - Create access level (not implemented yet)
-- `POST /api/accLevel/deleteLevel` - Delete access level (not implemented yet)
-- `POST /api/accLevel/addLevelPerson` - Grant access to person (not implemented yet)
-- `POST /api/accLevel/deleteLevel` - Remove access from person (not implemented yet)
+- `GET /api/access-levels` → `GET v2/accLevel/list` - ✅ **WORKING** - Lists access levels
+- `POST /api/access-levels/assign` → `POST accLevel/addLevelPerson` - ✅ **WORKING** - Assigns access levels to persons using full string IDs
+- `DELETE /api/access-levels/assign` → `POST accLevel/deleteLevel` - ✅ **WORKING** - Removes access levels from persons
+- `POST accLevel/addLevel` - Create access level (not implemented yet)
+- `POST accLevel/deleteLevel` - Delete access level (not implemented yet)
+
+#### Branch/Department Management (v1.0)
+- `GET /api/branches` → `POST department/getDepartmentList` - ✅ **WORKING** - Lists hierarchical departments
+- `POST /api/branches` → `POST department/add` - ✅ **WORKING** - Creates new departments
+
+#### Door Management (v2.0)
+- `GET /api/doors` → `GET /api/door/list` - ✅ **WORKING** - Lists all doors with device grouping
+- `GET /api/devices` → `GET /api/device/accList` - ✅ **WORKING** - Lists access devices for naming
+
+#### Reader Management (v2.0)
+- `GET /api/readers` → `GET /api/v2/reader/list` - ✅ **WORKING** - Lists access readers associated with doors
 
 ### 📊 Current Data Status
 
-#### Person Data (5 records loaded)
+#### Person Data Structure (PIN-Based System)
+The system now uses PIN-based account numbers with automatic spouse relationship tracking:
+
 ```json
 [
   {
     "pin": "23510009090",
-    "name": "George",
-    "lastName": "Mrema",
-    "deptName": "PRIVATE BANKING CUSTOMER",
+    "name": "George Mrema",
+    "deptCode": "1",
+    "accLevelIds": "402880f39ae893ad019ae895fe3d0463",
     "gender": "M",
-    "email": "calvin@comsec.co.tz"
+    "email": "calvin@comsec.co.tz",
+    "relationship": "principal"
   },
   {
-    "pin": "23510009090S1",
-    "name": "Zainab",
-    "lastName": "Gamaru",
-    "deptName": "SPOUSE PRIVATE BANKING",
-    "accLevelIds": "402880f39ae893ad019ae895fe3d0463"
+    "pin": "23510009090s1",
+    "name": "Zainab Gamaru",
+    "deptCode": "1",
+    "accLevelIds": "402880f39ae893ad019ae895fe3d0463",
+    "gender": "F",
+    "relationship": "spouse",
+    "linkedTo": "23510009090"
   }
-  // ... 3 more records
 ]
 ```
 
-#### Access Level Data (1 record loaded)
+#### PIN Generation Rules
+- **Principal**: `{accountNumber}` (max 15 characters)
+- **Spouse**: `{accountNumber}s1` (automatic generation)
+- **Relationship**: Tracked via PIN suffix for access management
+
+#### Access Level Data (2 records loaded)
 ```json
 [
   {
     "id": "402880f39ae893ad019ae895fe3d0463",
-    "name": "General"
+    "name": "General Access"
+  },
+  {
+    "id": "402880f39ae893ad019ae895fe3d0464",
+    "name": "VIP Access"
+  }
+]
+```
+
+#### Door Data Structure (Device-Grouped)
+```json
+[
+  {
+    "id": "402880209afc9bd7019b1210f8a60179",
+    "name": "RND Door-1",
+    "deviceId": "402880209afc9bd7019b1210f7c8013e"
+  },
+  {
+    "id": "402880209afc9bd7019b1210f8a8017a",
+    "name": "RND Door-2",
+    "deviceId": "402880209afc9bd7019b1210f7c8013e"
+  }
+]
+```
+
+#### Device Data Structure
+```json
+[
+  {
+    "id": "402880209afc9bd7019b1210f7c8013e",
+    "name": "Main Access Controller"
   }
 ]
 ```
@@ -138,16 +194,21 @@ This application successfully integrates with **ZKBio CVSecurity API v2.0** usin
 - **Success Feedback**: Notifications for successful operations
 - **Error Recovery**: Graceful handling of API failures
 
-### 🚧 Planned Endpoints (Not Yet Implemented)
+### ✅ Recently Implemented Endpoints
+
+#### Door Management (v2.0)
+- `GET /api/doors` → `GET /api/door/list` - ✅ **WORKING** - Lists all doors with device grouping
+- Door selection grouped by device ID with filter support
+
+#### Device Management (v2.0)
+- `GET /api/devices` → `GET /api/device/accList` - ✅ **WORKING** - Lists access devices for naming
 
 #### Reader Management (v2.0)
-- `GET /api/v2/reader/list` - List readers
-- `POST /api/v2/reader/add` - Create reader
-- `PUT /api/v2/reader/update/{id}` - Update reader
-- `POST /api/v2/reader/delete/{id}` - Delete reader
+- `GET /api/readers` → `GET /api/v2/reader/list` - ✅ **WORKING** - Lists access readers associated with doors
+
+### 🚧 Planned Endpoints (Not Yet Implemented)
 
 #### Door Control (v2.0)
-- `GET /api/v2/door/list` - List doors
 - `POST /api/door/remoteOpenById` - Remote door open
 - `POST /api/door/remoteCloseById` - Remote door close
 - `GET /api/door/doorStateById` - Get door state
@@ -161,17 +222,38 @@ This application successfully integrates with **ZKBio CVSecurity API v2.0** usin
 - `GET /api/v2/card/getCards/{pin}` - Get cards by PIN
 - `POST /api/card/set` - Assign card to person
 
-#### Biometric Templates (v2.0)
-- `GET /api/v2/bioTemplate/getFgListByPin/{pin}` - Get fingerprint templates
-- `POST /api/bioTemplate/add` - Upload biometric template
+#### Advanced Biometric Operations
 - `POST /api/v2/bioTemplate/deleteByPin` - Delete templates by PIN
+- `POST /api/bioTemplate/update` - Update biometric templates
 
-## Usage in IMS
+#### Person Management Extensions
+- `PUT /api/v2/person/update/{pin}` - Update person details
+- `POST /api/v2/person/delete/{pin}` - Delete person by PIN
+- `POST /api/person/leave` - Process person leave
+- `POST /api/person/reinstated` - Reinstated person
 
-In this application:
-- Fetch persons to display inventory access personnel.
-- Register new persons with cards and fingerprints for biometric access.
-- Sync data for real-time access control integration.
+## Usage in IMS - API v2 Integration
+
+### Registration System
+- **PIN-Based Registration**: Account numbers serve as ZK API PINs (max 15 characters)
+- **Couple Registration**: Principal + spouse with automatic "s1" suffix generation
+- **Biometric Upload**: Optional fingerprint template upload via `bioTemplate/add` (v1) - can be done during editing
+- **Access Assignment**: Automatic access level assignment during registration
+- **Branch Management**: Hierarchical department selection via `department/getDepartmentList` (v1)
+
+### Data Management
+- **Relationship Tracking**: Principal-spouse linkage via PIN for cascade access management
+- **Real-time Sync**: Automatic data refresh with manual override options
+- **Biometric Retrieval**: Fetch templates via `/api/v2/bioTemplate/getFgListByPin/{pin}`
+- **Access Control**: Assign/remove access levels with immediate API synchronization
+- **Door Management**: Device-grouped door selection with filtering capabilities
+- **Device Integration**: Access device naming and management
+
+### API Integration Features
+- **Proxy Routes**: All ZK API calls routed through Next.js for CORS/SSL handling
+- **Error Recovery**: Comprehensive error handling with user feedback
+- **Data Validation**: Client and server-side validation for all operations
+- **Caching**: 5-minute TTL for branch and access level data
 
 ## Documentation
 
@@ -179,6 +261,32 @@ Full manual available from ZKTECO: Search for "ZKBio CVSecurity 3rd Party API Us
 
 ## Notes
 
-- Rate limits and error codes depend on server configuration.
-- Ensure HTTPS for production.
-- Biometric capture requires compatible devices; templates are base64 encoded.
+### PIN Management
+- **PIN Format**: Account numbers serve as ZK API PINs (max 15 characters, no format restrictions)
+- **Uniqueness**: Each PIN must be unique across the ZK system
+- **Relationship Tracking**: Spouse PINs use "s1" suffix (e.g., PB-123456 → PB-123456s1)
+- **Security**: PINs are sensitive data - handle securely and never log in plain text
+
+### Biometric Integration
+- **Real-time Upload**: Fingerprint templates uploaded directly to ZK API during registration
+- **Template Format**: Base64 encoded with version and validation metadata
+- **Retrieval**: Templates can be fetched for verification and management
+- **Device Compatibility**: Requires ZK-compatible biometric capture devices
+
+### Access Control
+- **Cascade Management**: Principal access removal automatically affects linked spouse accounts
+- **Real-time Assignment**: Access levels assigned immediately during registration
+- **Relationship Tracking**: PIN-based linkage enables automatic access management
+
+### API Integration
+- **API Version**: Primarily using ZKTECO API v2.0 for enhanced functionality
+- **Proxy Architecture**: All ZK API calls routed through Next.js for CORS and SSL handling
+- **Error Handling**: Comprehensive error recovery with user-friendly feedback
+- **Rate Limiting**: Respect API rate limits and implement appropriate retry logic
+- **HTTPS Required**: Production deployments must use HTTPS for security
+
+### Data Synchronization
+- **Caching Strategy**: 5-minute TTL for branch and access level data
+- **Real-time Updates**: Immediate synchronization for critical operations
+- **Background Sync**: Automatic refresh for non-critical data
+- **Conflict Resolution**: Handle concurrent access and data consistency

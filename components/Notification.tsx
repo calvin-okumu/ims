@@ -10,7 +10,7 @@ interface NotificationProps {
   persistent?: boolean;
 }
 
-const Notification: React.FC<NotificationProps> = ({
+const Notification: React.FC<NotificationProps> = React.memo(({
   type,
   message,
   onClose,
@@ -22,10 +22,19 @@ const Notification: React.FC<NotificationProps> = ({
 
   useEffect(() => {
     if (autoClose && type !== 'loading' && !persistent) {
+      const timeout = setTimeout(() => {
+        onClose();
+      }, duration);
+
+      return () => clearTimeout(timeout);
+    }
+  }, [autoClose, duration, onClose, type, persistent]);
+
+  useEffect(() => {
+    if (autoClose && type !== 'loading' && !persistent) {
       const interval = setInterval(() => {
         setProgress(prev => {
           if (prev <= 0) {
-            onClose();
             return 0;
           }
           return prev - (100 / (duration / 100));
@@ -34,7 +43,7 @@ const Notification: React.FC<NotificationProps> = ({
 
       return () => clearInterval(interval);
     }
-  }, [autoClose, duration, onClose, type, persistent]);
+  }, [autoClose, duration, type, persistent]);
 
   const getIcon = () => {
     switch (type) {
@@ -104,6 +113,8 @@ const Notification: React.FC<NotificationProps> = ({
       )}
     </div>
   );
-};
+});
+
+Notification.displayName = 'Notification';
 
 export default Notification;

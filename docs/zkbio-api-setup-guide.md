@@ -6,7 +6,7 @@ This guide provides detailed instructions for setting up and configuring the ZKB
 
 ## Prerequisites
 
-- ZKBio CVSecurity server (version 6.0.0 or above) running at `https://192.168.183.114:8098`
+- ZKBio CVSecurity server (version 6.0.0 or above) running and accessible
 - Superuser access to ZKBio admin panel
 - Network access to ZKBio server from your application server
 - Next.js application with API proxy routes configured
@@ -15,10 +15,7 @@ This guide provides detailed instructions for setting up and configuring the ZKB
 
 ### Step 1: Access ZKBio Admin Panel
 
-1. Open your web browser and navigate to your ZKBio CVSecurity server:
-   ```
-   https://192.168.183.114:8098
-   ```
+1. Open your web browser and navigate to your ZKBio CVSecurity server
 
 2. Log in with superuser credentials:
    - **Username**: `admin` (or your superuser account)
@@ -154,13 +151,13 @@ curl -k "https://192.168.183.114:8098/api/v2/reader/list?pageNo=1&pageSize=5&acc
 
 ```bash
 # Get access levels
-curl -k "https://192.168.0.93:8098/api/v2/accLevel/list?pageNo=1&pageSize=10&access_token=8D1E99707293387C5B3BFC7291AD38CB"
+curl -k "https://192.168.183.114:8098/api/v2/accLevel/list?pageNo=1&pageSize=10&access_token=8D1E99707293387C5B3BFC7291AD38CB"
 
 # Get persons
-curl -k "https://192.168.0.93:8098/api/v2/person/getPersonList?pageNo=1&pageSize=10&access_token=8D1E99707293387C5B3BFC7291AD38CB"
+curl -k "https://192.168.183.114:8098/api/v2/person/getPersonList?pageNo=1&pageSize=10&access_token=8D1E99707293387C5B3BFC7291AD38CB"
 
-# Get readers
-curl -k "https://192.168.0.93:8098/api/v2/reader/list?pageNo=1&pageSize=10&access_token=8D1E99707293387C5B3BFC7291AD38CB"
+# Get departments
+curl -k "https://192.168.183.114:8098/api/department/getDepartmentList?pageNo=1&pageSize=10&access_token=8D1E99707293387C5B3BFC7291AD38CB"
 ```
 
 ## API Response Format

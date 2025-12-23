@@ -139,14 +139,14 @@ const ApiConnectivityTest: React.FC = () => {
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-lg p-6 border border-gray-200">
-      <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center gap-2">
+    <div className="bg-white dark:bg-gray-800 rounded-lg shadow-lg p-6 border border-gray-200 dark:border-gray-700">
+      <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-4 flex items-center gap-2">
         API Connectivity Test
       </h3>
 
       {/* Environment Information */}
-      <div className="mb-6 p-4 bg-gray-50 rounded-lg border border-gray-200">
-        <h4 className="font-medium text-gray-900 mb-3">Environment Configuration</h4>
+      <div className="mb-6 p-4 bg-gray-50 dark:bg-gray-700 rounded-lg border border-gray-200 dark:border-gray-600">
+        <h4 className="font-medium text-gray-900 dark:text-white mb-3">Environment Configuration</h4>
         <div className="space-y-2 text-sm">
           <div className="flex justify-between">
             <span className="text-gray-600">API URL:</span>

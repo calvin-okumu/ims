@@ -4,6 +4,7 @@
 require('dotenv').config({ path: '.env.local' });
 
 const axios = require('axios');
+const https = require('https');
 
 console.log('🔍 Testing ZKBio API Configuration...\n');
 
@@ -18,7 +19,7 @@ console.log('   API Token:', apiToken ? `✅ Set (${apiToken.length} characters)
 if (!apiUrl || !apiToken) {
   console.log('\n❌ Configuration Issues Found:');
   if (!apiUrl) console.log('   • NEXT_PUBLIC_ZKBIO_API_URL is not set');
-  if (!apiToken) console.log('   • NEXT_PUBLIC_ZKBIO_API_TOKEN is not set');
+   if (!apiToken) console.log('   • NEXT_PUBLIC_ZKBIO_TOKEN is not set');
   console.log('\n💡 To fix:');
   console.log('   1. Copy .env.local.example to .env.local');
   console.log('   2. Update the values in .env.local');
@@ -35,7 +36,10 @@ const apiClient = axios.create({
   headers: {
     'Content-Type': 'application/json',
     'Authorization': `Bearer ${apiToken}`
-  }
+  },
+  httpsAgent: new https.Agent({
+    rejectUnauthorized: false,
+  }),
 });
 
 async function testApi() {

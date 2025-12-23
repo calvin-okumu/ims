@@ -1,31 +1,67 @@
 import { useState, useEffect } from 'react';
-import { getAreas, getDoorsByArea } from '../services/areaService';
-import { getReaders } from '../services/readerService';
 import { Area, Reader } from '../types/api';
 
 export const useAreaBasedDoorSelection = () => {
   const [areas, setAreas] = useState<Area[]>([]);
-  const [allDoors, setAllDoors] = useState<Reader[]>([]);
-  const [selectedArea, setSelectedArea] = useState<number | null>(null);
-  const [filteredDoors, setFilteredDoors] = useState<Reader[]>([]);
+  const [doorsByDevice, setDoorsByDevice] = useState<{[key: string]: any[]}>({});
+  const [deviceNames, setDeviceNames] = useState<{[key: string]: string}>({});
+  const [allReaders, setAllReaders] = useState<Reader[]>([]);
+  const [selectedDevice, setSelectedDevice] = useState<string | null>(null);
+  const [filteredReaders, setFilteredReaders] = useState<Reader[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  // Fetch all areas and doors on mount
+  // Fetch all doors, devices, and readers on mount
   useEffect(() => {
     const fetchData = async () => {
       setLoading(true);
       setError(null);
       try {
-        const [areasData, doorsData] = await Promise.all([
-          getAreas(),
-          getReaders()
+        const [doorsResponse, devicesResponse, readersResponse] = await Promise.all([
+          fetch('/api/doors'),
+          fetch('/api/devices'),
+          fetch('/api/readers')
         ]);
-        setAreas(areasData);
-        setAllDoors(doorsData);
-        setFilteredDoors(doorsData); // Initially show all doors
+
+        if (!doorsResponse.ok || !devicesResponse.ok || !readersResponse.ok) {
+          throw new Error('Failed to fetch data');
+        }
+
+        const doorsData = await doorsResponse.json();
+        const devicesData = await devicesResponse.json();
+        const readersData = await readersResponse.json();
+
+        // Create device name mapping
+        const deviceNameMap: {[key: string]: string} = {};
+        devicesData.forEach((device: any) => {
+          deviceNameMap[device.id || device.deviceId] = device.name || device.deviceName || `Device ${device.id?.slice(-4) || 'Unknown'}`;
+        });
+
+        // Group doors by deviceId
+        const groupedDoors: {[key: string]: any[]} = {};
+        const deviceAreas: Area[] = [];
+
+        doorsData.forEach((door: any) => {
+          const deviceId = door.deviceId;
+          if (!groupedDoors[deviceId]) {
+            groupedDoors[deviceId] = [];
+            // Create area for this device
+            deviceAreas.push({
+              AreaID: deviceAreas.length + 1,
+              Name: deviceNameMap[deviceId] || `Device ${deviceId.slice(-4)}`,
+              Description: `Doors for device ${deviceId}`
+            });
+          }
+          groupedDoors[deviceId].push(door);
+        });
+
+        setAreas(deviceAreas);
+        setDoorsByDevice(groupedDoors);
+        setDeviceNames(deviceNameMap);
+        setAllReaders(readersData);
+        setFilteredReaders(readersData); // Initially show all readers
       } catch (err) {
-        setError('Failed to fetch areas and doors');
+        setError('Failed to fetch doors, devices and readers');
         console.error('Error fetching data:', err);
       } finally {
         setLoading(false);
@@ -35,28 +71,27 @@ export const useAreaBasedDoorSelection = () => {
     fetchData();
   }, []);
 
-  // Filter doors when area selection changes
+  // Filter readers when device selection changes
   useEffect(() => {
-    // Show all doors since Reader interface doesn't have area information
-    setFilteredDoors(allDoors);
-  }, [allDoors]);
-
-  // Get unique device SNs from doors for fallback
-  const getUniqueAreasFromDoors = (): string[] => {
-    const deviceSns = allDoors
-      .map(door => door.deviceSn)
-      .filter((sn): sn is string => sn !== undefined);
-    return [...new Set(deviceSns)];
-  };
+    if (selectedDevice === null) {
+      setFilteredReaders(allReaders);
+    } else {
+      // Filter readers by doors that belong to the selected device
+      // This is a simplified version - in practice, we'd need to match doorIds
+      setFilteredReaders(allReaders); // For now, show all until we implement proper filtering
+    }
+  }, [selectedDevice, allReaders]);
 
   return {
     areas,
-    allDoors,
-    selectedArea,
-    filteredDoors,
+    doorsByDevice,
+    deviceNames,
+    allDoors: allReaders, // Keep the same interface
+    selectedDevice,
+    filteredDoors: filteredReaders, // Keep the same interface
     loading,
     error,
-    setSelectedArea,
-    getUniqueAreasFromDoors
+    setSelectedDevice,
+    getUniqueAreasFromDoors: () => [] // Placeholder
   };
 };

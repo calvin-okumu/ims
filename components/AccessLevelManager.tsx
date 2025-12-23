@@ -24,11 +24,13 @@ const AccessLevelManager = () => {
   // Use area-based door selection hook
   const {
     areas,
+    doorsByDevice,
+    deviceNames,
     filteredDoors,
-    selectedArea,
+    selectedDevice,
     loading: doorsLoading,
     error: doorsError,
-    setSelectedArea
+    setSelectedDevice
   } = useAreaBasedDoorSelection();
 
   
@@ -265,42 +267,53 @@ const AccessLevelManager = () => {
           className="w-full p-2 border rounded"
         />
         <div>
-          <label className="block text-sm font-medium mb-2">Filter by Area (Optional)</label>
+          <label className="block text-sm font-medium mb-2">Filter by Device (Optional)</label>
           <select
-            value={selectedArea || ''}
-            onChange={(e) => setSelectedArea(e.target.value ? Number(e.target.value) : null)}
+            value={selectedDevice || ''}
+            onChange={(e) => setSelectedDevice(e.target.value || null)}
             className="w-full p-2 border rounded mb-4"
           >
-            <option value="">All Areas</option>
-            {areas.map((area) => (
-              <option key={area.AreaID} value={area.AreaID}>
-                {area.Name}
+            <option value="">All Devices</option>
+            {Object.keys(doorsByDevice).map((deviceId) => (
+              <option key={deviceId} value={deviceId}>
+                {deviceNames[deviceId] || `Device ${deviceId.slice(-4)}`}
               </option>
             ))}
           </select>
-          
-          <label className="block text-sm font-medium">Assign Readers (Doors)</label>
+
+          <label className="block text-sm font-medium mb-2">Assign Doors</label>
           {doorsLoading ? (
             <p>Loading doors...</p>
           ) : doorsError ? (
             <p className="text-red-500">{doorsError}</p>
           ) : (
-            filteredDoors.map(reader => (
-              <label key={reader.ReaderID} className="block">
-                <input
-                  type="checkbox"
-                  checked={selectedReaders.includes(reader.ReaderID || 0)}
-                  onChange={(e) => {
-                    if (e.target.checked) {
-                      setSelectedReaders([...selectedReaders, reader.ReaderID || 0]);
-                    } else {
-                      setSelectedReaders(selectedReaders.filter(id => id !== (reader.ReaderID || 0)));
-                    }
-                  }}
-                />
-                {reader.name} {reader.deviceSn && `(${reader.deviceSn})`}
-              </label>
-            ))
+            Object.entries(doorsByDevice)
+              .filter(([deviceId]) => !selectedDevice || deviceId === selectedDevice)
+              .map(([deviceId, doors]) => (
+                <div key={deviceId} className="mb-4 p-3 border rounded">
+                  <h4 className="font-medium mb-2">
+                    {deviceNames[deviceId] || `Device ${deviceId.slice(-4)}`} ({doors.length} doors)
+                  </h4>
+                  <div className="space-y-1">
+                    {doors.map(door => (
+                      <label key={door.id} className="block">
+                        <input
+                          type="checkbox"
+                          checked={selectedReaders.includes(door.id)}
+                          onChange={(e) => {
+                            if (e.target.checked) {
+                              setSelectedReaders([...selectedReaders, door.id]);
+                            } else {
+                              setSelectedReaders(selectedReaders.filter(id => id !== door.id));
+                            }
+                          }}
+                        />
+                        {door.name}
+                      </label>
+                    ))}
+                  </div>
+                </div>
+              ))
           )}
         </div>
         <button
@@ -316,20 +329,23 @@ const AccessLevelManager = () => {
       <div className="border p-4 rounded shadow">
         <h3 className="text-lg font-semibold mb-4">Access Levels</h3>
         <ul className="space-y-2">
-          {levels.map((level) => (
-            <li key={level.LevelID} className="flex justify-between items-center border p-2 rounded">
-              <div>
-                <p><strong>{level.Name}</strong></p>
-                <p>{level.Description}</p>
-              </div>
-              <button
-                onClick={() => level.LevelID && handleDelete(level.LevelID)}
-                className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
-              >
-                Delete
-              </button>
-            </li>
-          ))}
+          {levels.map((level, index) => {
+            const levelId = level.id || level.LevelID;
+            return (
+              <li key={`level-${levelId || index}`} className="flex justify-between items-center border p-2 rounded">
+                <div>
+                  <p><strong>{level.name || level.Name}</strong></p>
+                  <p>{level.Description}</p>
+                </div>
+                <button
+                  onClick={() => levelId && handleDelete(Number(levelId))}
+                  className="bg-red-500 text-white px-3 py-1 rounded hover:bg-red-600"
+                >
+                  Delete
+                </button>
+              </li>
+            );
+          })}
         </ul>
       </div>
 
@@ -354,11 +370,14 @@ const AccessLevelManager = () => {
           className="w-full p-2 border rounded"
         >
           <option value="">Select Access Level</option>
-          {levels.map((level) => (
-            <option key={level.LevelID} value={level.LevelID}>
-              {level.Name}
-            </option>
-          ))}
+          {levels.map((level, index) => {
+            const levelId = level.id || level.LevelID;
+            return (
+              <option key={`level-${levelId || index}`} value={levelId}>
+                {level.name || level.Name}
+              </option>
+            );
+          })}
         </select>
         <div className="flex space-x-2">
           <button

@@ -1,5 +1,6 @@
 import axios from 'axios';
 import axiosRetry from 'axios-retry';
+import https from 'https';
 
 const apiClient = axios.create({
   baseURL: process.env.NEXT_PUBLIC_ZKBIO_API_URL || 'http://localhost:8080', // Replace with actual ZKBio CVSecurity API base URL
@@ -8,8 +9,9 @@ const apiClient = axios.create({
     'Content-Type': 'application/json',
   },
   withCredentials: false, // Disable credentials for CORS
-  // For browser environments, we can't disable SSL validation directly
-  // The user will need to accept the certificate warning or use a valid certificate
+  httpsAgent: new https.Agent({
+    rejectUnauthorized: false, // Accept self-signed certificates
+  }),
 });
 
 // Authentication interceptor - use access token as URL parameter (ZKBio requirement)

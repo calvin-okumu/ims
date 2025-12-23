@@ -7,8 +7,10 @@ export interface ApiResponse<T> {
 
 // Access Level Types
 export interface AccessLevel {
+  id?: string;
   LevelID?: number;
-  Name: string;
+  Name?: string;
+  name?: string;
   Description?: string;
   DoorIds?: number[];
   areaName?: string;
@@ -129,6 +131,68 @@ export interface TransactionFilters {
   personPin?: string;
   startDate?: string;
   endDate?: string;
+}
+
+// Branch (Department) Types
+export interface Branch {
+  code: string;
+  name: string;
+  description?: string;
+  parentCode?: string;
+  level: number;
+  isActive: boolean;
+  createdAt?: string;
+}
+
+export interface BranchHierarchy extends Branch {
+  children?: BranchHierarchy[];
+  fullPath: string;
+}
+
+export interface BranchFilters {
+  codes?: string;
+  parentCode?: string;
+}
+
+// Notification Types
+export interface NotificationState {
+  type: 'success' | 'error' | 'warning' | 'info' | 'loading';
+  message: string;
+}
+
+// Registration Form Data
+export interface RegistrationFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  spouseFirstName: string;
+  spouseLastName: string;
+  spouseDateOfBirth: string;
+  spouseGender: string;
+  spouseFingerIndex: string;
+  fingerIndex: string;
+  selectedAccessLevel: string;
+  fingerprintData?: {
+    template: string;
+    quality: number;
+    capturedAt: string;
+    bioType: number;
+    version: string;
+    templateNo: string;
+  } | null;
+  spouseFingerprintData?: {
+    template: string;
+    quality: number;
+    capturedAt: string;
+    bioType: number;
+    version: string;
+    templateNo: string;
+  } | null;
+  registrationType: 'single' | 'couple';
 }
 
 // Legacy interfaces for backward compatibility

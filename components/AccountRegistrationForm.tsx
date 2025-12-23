@@ -7,6 +7,8 @@ import { uploadBiometricTemplate } from '../services/biometricService';
 import { createAccount } from '../services/accountService';
 import { grantAccess } from '../services/accessLevelService';
 import { Person, PersonCreateRequest, Card, BiometricTemplate, Account } from '../types/api';
+import BranchSelect from './BranchSelect';
+import BranchCreator from './BranchCreator';
 // import { v4 as uuidv4 } from 'uuid'; // Replaced with simple ID
 
 // Note: Install uuid for accountId: npm install uuid @types/uuid
@@ -15,12 +17,14 @@ const AccountRegistrationForm = () => {
   const [principalName, setPrincipalName] = useState('');
   const [spouseName, setSpouseName] = useState('');
   const [accountNumber, setAccountNumber] = useState('');
+  const [branchCode, setBranchCode] = useState('');
   const [principalFingerprint, setPrincipalFingerprint] = useState('');
   const [spouseFingerprint, setSpouseFingerprint] = useState('');
   const [cardNo, setCardNo] = useState('');
   const [spouseCardNo, setSpouseCardNo] = useState('');
   const [loading, setLoading] = useState(false);
   const [message, setMessage] = useState('');
+  const [showBranchCreator, setShowBranchCreator] = useState(false);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -33,22 +37,30 @@ const AccountRegistrationForm = () => {
         return;
       }
 
+      // Validate branch selection
+      if (!branchCode) {
+        setMessage('Please select a branch for the account.');
+        return;
+      }
+
       // Create principal person
       const principal: PersonCreateRequest = {
         pin: `P${accountNumber}`, // Use account number as PIN prefix
-        name: principalName
+        name: principalName,
+        deptCode: branchCode // Assign branch to principal
       };
       const principalPerson = await createPerson(principal);
 
       const accountId = principalPerson.PersonID || 0;
       const accessLevelId = 1; // Assume "VIP Lounge" ID
 
-      // Create spouse if provided
+      // Create spouse if provided (same branch as principal)
       let spousePerson;
       if (spouseName) {
         const spouse: PersonCreateRequest = {
           pin: `S${accountNumber}`, // Use account number as PIN prefix for spouse
-          name: spouseName
+          name: spouseName,
+          deptCode: branchCode // Assign same branch to spouse
         };
         spousePerson = await createPerson(spouse);
       }
@@ -105,6 +117,7 @@ const AccountRegistrationForm = () => {
       setPrincipalName('');
       setSpouseName('');
       setAccountNumber('');
+      setBranchCode('');
       setPrincipalFingerprint('');
       setSpouseFingerprint('');
       setCardNo('');
@@ -148,6 +161,16 @@ const AccountRegistrationForm = () => {
             onChange={(e) => setAccountNumber(e.target.value)}
             className="w-full p-2 border rounded"
             required
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium mb-1">Branch</label>
+          <BranchSelect
+            value={branchCode}
+            onChange={setBranchCode}
+            required={true}
+            showCreateOption={true}
+            onCreateNew={() => setShowBranchCreator(true)}
           />
         </div>
         <div>
@@ -204,6 +227,16 @@ const AccountRegistrationForm = () => {
         </button>
       </form>
       {message && <p className="mt-4 text-center">{message}</p>}
+
+      {/* Branch Creator Modal */}
+      <BranchCreator
+        isOpen={showBranchCreator}
+        onClose={() => setShowBranchCreator(false)}
+        onBranchCreated={(branch) => {
+          setBranchCode(branch.code);
+          setShowBranchCreator(false);
+        }}
+      />
     </div>
   );
 };
