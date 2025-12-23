@@ -267,9 +267,13 @@ Feedback ← Response ← Success ← Confirmation
 - `types/api.ts` - TypeScript interfaces for all data structures
 
 #### **Documentation**
+- `docs/technical-architecture-guide.md` - Complete programming concepts, patterns, and implementation strategies
 - `docs/README.md` - Main project documentation (streamlined)
 - `docs/zkteco-api-summary.md` - API integration summary
 - `docs/zkteco-api-reference-latest.md` - Used endpoints only (93% reduction)
+- `docs/monitoring-setup.md` - Complete monitoring and alerting system setup
+- `docs/testing-infrastructure.md` - Comprehensive testing setup and best practices
+- `docs/docker-deployment.md` - Containerization and production deployment
 
 ### 🔧 **Current Implementation Status**
 
