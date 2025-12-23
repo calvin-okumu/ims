@@ -67,7 +67,7 @@ describe('AccessLevelManagement', () => {
 
     await user.type(screen.getByPlaceholderText('e.g., VIP Access'), 'Test Level');
     await user.type(screen.getByPlaceholderText('e.g., Access to main areas and VIP lounge'), 'Test Description');
-    await user.click(screen.getByText('Creating...'));
+    await user.click(screen.getByText('Create Access Level & Sync to ZKBio'));
 
     await waitFor(() => {
       expect(mockCreateAccessLevel).toHaveBeenCalledWith({
@@ -92,7 +92,8 @@ describe('AccessLevelManagement', () => {
     );
 
     await user.type(screen.getByPlaceholderText('e.g., VIP Access'), 'Test Level');
-    await user.click(screen.getByText('Creating...'));
+    await user.type(screen.getByPlaceholderText('e.g., Access to main areas and VIP lounge'), 'Test Description');
+    await user.click(screen.getByText('Create Access Level & Sync to ZKBio'));
 
     await waitFor(() => {
       expect(mockShowNotification).toHaveBeenCalledWith('Failed to create access level', 'error');
@@ -110,6 +111,8 @@ describe('AccessLevelManagement', () => {
       />
     );
 
+    // Fill name but leave description empty to trigger validation
+    await user.type(screen.getByPlaceholderText('e.g., VIP Access'), 'Test Level');
     await user.click(screen.getByText('Create Access Level & Sync to ZKBio'));
 
     expect(mockShowNotification).toHaveBeenCalledWith('Name and description are required', 'error');
