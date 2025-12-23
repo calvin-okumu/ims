@@ -1,19 +1,26 @@
 'use client';
 
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { UserPlus, Fingerprint, DoorOpen, Users, Database, CheckCircle, XCircle, AlertCircle, Shield, Plus, Trash2, MapPin, Clock, Activity, RefreshCw, User, X } from 'lucide-react';
 import { useAreaBasedDoorSelection } from '../hooks/useAreaBasedDoorSelection';
 import { getAccessLevels } from '../services/accessLevelService';
 import { getPersons } from '../services/personService';
 import { getReaders } from '../services/readerService';
 import { AccessLevel, Person, Reader, AccessLog } from '../types/api';
+import dynamic from 'next/dynamic';
 import Notification from '../components/Notification';
 import Skeleton from '../components/Skeleton';
-import ApiConnectivityTest from '../components/ApiConnectivityTest';
-import UserManagement from '../components/UserManagement';
-import EditUserModal from '../components/EditUserModal';
-import AddUserModal from '../components/AddUserModal';
-import BranchSelect from '../components/BranchSelect';
+
+// Lazy load heavy components
+const ApiConnectivityTest = dynamic(() => import('../components/ApiConnectivityTest'), {
+  loading: () => <Skeleton variant="rectangular" height="400px" />
+});
+const UserManagement = dynamic(() => import('../components/UserManagement'), {
+  loading: () => <Skeleton variant="rectangular" height="600px" />
+});
+const EditUserModal = dynamic(() => import('../components/EditUserModal'));
+const AddUserModal = dynamic(() => import('../components/AddUserModal'));
+const BranchSelect = dynamic(() => import('../components/BranchSelect'));
 import { useTheme } from '../components/ThemeProvider';
 import { Sun, Moon } from 'lucide-react';
 import { uploadBiometricTemplate } from '../services/biometricService';
@@ -154,6 +161,14 @@ export default function BiometricAccessApp() {
     useEffect(() => {
         fetchAccessLevels();
     }, []);
+
+    // Memoize tab statistics for performance
+    const tabStats = useMemo(() => ({
+        users: users.length,
+        accessLevels: accessLevels.length,
+        devices: Object.keys(doorsByDevice).length,
+        doors: Object.values(doorsByDevice).reduce((total, doors) => total + doors.length, 0)
+    }), [users.length, accessLevels.length, doorsByDevice]);
 
     const fetchAccessLevels = async () => {
         setLoading(prev => ({ ...prev, accessLevels: true }));
@@ -643,7 +658,7 @@ export default function BiometricAccessApp() {
                                 }`}
                         >
                             <Users size={18} />
-                            Registered Users ({users.length})
+                            Registered Users ({tabStats.users})
                         </button>
                         <button
                             onClick={() => setActiveTab('accessLevels')}
@@ -653,7 +668,7 @@ export default function BiometricAccessApp() {
                                 }`}
                         >
                             <Shield size={18} />
-                            Access Levels ({accessLevels.length})
+                            Access Levels ({tabStats.accessLevels})
                         </button>
                         <button
                             onClick={() => {

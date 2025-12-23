@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import * as https from 'https';
+import { logInfo, logError } from '../../../lib/logger';
 
 // Create axios instance with HTTPS agent that ignores certificate validation
 const axiosInstance = axios.create({
@@ -30,15 +31,13 @@ export async function GET(request: NextRequest) {
 
     const apiUrl = `${process.env.NEXT_PUBLIC_ZKBIO_API_URL}/v2/person/getPersonList?${params}&access_token=${process.env.NEXT_PUBLIC_ZKBIO_API_TOKEN}`;
 
-    console.log('Proxy API call to:', apiUrl);
+    logInfo('Proxy API call to persons list', { apiUrl });
 
     const response = await axiosInstance.post(apiUrl);
 
-    console.log('Proxy API response:', response.data);
-
-    return NextResponse.json(response.data);
+    logInfo('Proxy API response received', { status: response.status });
   } catch (error) {
-    console.error('Proxy API error:', error);
+    logError('Proxy API error for persons list', error);
 
     if (axios.isAxiosError(error)) {
       return NextResponse.json(
@@ -71,11 +70,11 @@ export async function POST(request: NextRequest) {
 
       const apiUrl = `${process.env.NEXT_PUBLIC_ZKBIO_API_URL}/person/add?access_token=${process.env.NEXT_PUBLIC_ZKBIO_API_TOKEN}`;
 
-      console.log('Proxy API call to create person:', apiUrl, 'with data:', personData);
+      logInfo('Proxy API call to create person', { apiUrl });
 
       const response = await axiosInstance.post(apiUrl, personData);
 
-      console.log('Proxy API response for person creation:', response.data);
+      logInfo('Proxy API response for person creation', { status: response.status });
 
       return NextResponse.json(response.data);
     } else {
@@ -93,16 +92,16 @@ export async function POST(request: NextRequest) {
 
       const apiUrl = `${process.env.NEXT_PUBLIC_ZKBIO_API_URL}/v2/person/getPersonList?${params}&access_token=${process.env.NEXT_PUBLIC_ZKBIO_API_TOKEN}`;
 
-      console.log('Proxy API call to:', apiUrl);
+    logInfo('Proxy API call to persons list', { apiUrl });
 
       const response = await axiosInstance.post(apiUrl);
 
-      console.log('Proxy API response:', response.data);
+    logInfo('Proxy API response received', { status: response.status });
 
       return NextResponse.json(response.data);
     }
   } catch (error) {
-    console.error('Proxy API error:', error);
+    logError('Proxy API error for persons list', error);
 
     if (axios.isAxiosError(error)) {
       return NextResponse.json(

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import axios from 'axios';
 import * as https from 'https';
+import { logInfo, logError } from '../../../../lib/logger';
 
 // Create axios instance with HTTPS agent that ignores certificate validation
 const axiosInstance = axios.create({
@@ -24,15 +25,13 @@ export async function POST(request: NextRequest) {
 
     const apiUrl = `${process.env.NEXT_PUBLIC_ZKBIO_API_URL}/person/delete/${pin}?access_token=${process.env.NEXT_PUBLIC_ZKBIO_API_TOKEN}`;
 
-    console.log('Proxy API call to delete person:', apiUrl);
+    logInfo('Proxy API call to delete person', { apiUrl });
 
     const response = await axiosInstance.post(apiUrl);
 
-    console.log('Proxy API response for person deletion:', response.data);
-
-    return NextResponse.json(response.data);
+    logInfo('Proxy API response for person deletion', { status: response.status });
   } catch (error) {
-    console.error('Proxy API error for person deletion:', error);
+    logError('Proxy API error for person deletion', error);
 
     if (axios.isAxiosError(error)) {
       return NextResponse.json(

@@ -10,7 +10,7 @@ interface NotificationProps {
   persistent?: boolean;
 }
 
-const Notification: React.FC<NotificationProps> = ({
+const Notification: React.FC<NotificationProps> = React.memo(({
   type,
   message,
   onClose,
@@ -113,6 +113,8 @@ const Notification: React.FC<NotificationProps> = ({
       )}
     </div>
   );
-};
+});
+
+Notification.displayName = 'Notification';
 
 export default Notification;
