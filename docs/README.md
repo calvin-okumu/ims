@@ -9,6 +9,7 @@ This is a Next.js-based Banking Access Control System that integrates with the Z
 - **PIN-Based Registration**: Account numbers serve as unique PINs for ZK API integration
 - **Couple Registration**: Principal and spouse registration with automatic relationship tracking
 - **Biometric Integration**: Optional fingerprint template upload and retrieval via ZK API (can be added during editing)
+- **ZK8500R Scanner Support**: WebUSB integration for real fingerprint capture (Chrome/Edge/Opera)
 - **Access Level Management**: Automatic assignment and cascade removal for linked accounts
 - **Branch Management**: Hierarchical department/branch structure with creation capabilities
 - **Real-time API Integration**: Direct integration with ZKTECO BioCVSecurity API endpoints
@@ -32,6 +33,9 @@ This is a Next.js-based Banking Access Control System that integrates with the Z
 1. **ZKBio CVSecurity Server**: Ensure your ZKBio CVSecurity server is running and accessible
 2. **API Authorization Setup**: Configure API access in ZKBio admin panel (see below)
 3. **Network Access**: Ensure the application server can reach the ZKBio server
+4. **ZK8500R Scanner (Optional)**: For fingerprint capture, connect ZK8500R scanner to client computer
+   - Supported browsers: Chrome 61+, Edge 79+, Opera 48+
+   - Scanner must be physically connected to the computer accessing the web application
 
 ### ZKBio API Authorization Setup
 
@@ -87,6 +91,94 @@ Follow these steps to configure API authorization in your ZKBio CVSecurity admin
 4. Run the development server: `npm run dev`
 5. Open http://localhost:3000
 
+### Network Access Setup
+
+For accessing the application from other computers on the network:
+
+#### ✅ RECOMMENDED: Disable Server Firewall First
+```bash
+# Check firewall status
+sudo ufw status
+
+# Disable firewall (immediate solution)
+sudo ufw disable
+
+# Test access from client: http://172.20.10.10:3000
+
+# Re-enable firewall after testing
+sudo ufw enable
+sudo ufw allow 3000
+```
+
+#### Alternative: Port 80 (HTTP Default)
+```bash
+# Start on port 80 (requires sudo, bypasses firewall issues)
+sudo ./start-port80.sh
+
+# Access from any computer on network:
+# http://[server-ip] (no port needed)
+# Example: http://172.20.10.10
+```
+
+#### Alternative: Standard Ports
+```bash
+# Start with network access enabled (port 3000)
+npm run dev:network
+
+# Access from other computers at:
+# http://[server-ip]:3000
+```
+
+#### Troubleshooting Network Access
+
+**✅ CONFIRMED SOLUTION**: Disable server firewall with `sudo ufw disable`
+
+**Common Issue**: "Cannot access from another computer on the same network"
+
+**Root Cause**: Ubuntu UFW firewall blocks incoming connections by default.
+
+**✅ SOLVED**: Use port 80 with `sudo ./start-port80.sh` - this bypasses firewall issues!
+
+**Alternative**: Disable firewall with `sudo ufw disable` for any port.
+
+**If still having issues:**
+
+1. **Client-Side (Windows Firewall)**:
+   - Temporarily disable Windows Firewall for testing
+   - Add inbound rule for port 3000 in Windows Firewall settings
+
+2. **Server-Side (Ubuntu Firewall)**:
+   ```bash
+   # Check firewall status
+   sudo ufw status
+
+   # Allow port 3000
+   sudo ufw allow 3000
+
+   # Or disable temporarily
+   sudo ufw disable
+   ```
+
+3. **Alternative Ports**:
+   ```bash
+   # Try port 80 (requires sudo)
+   sudo PORT=80 ./start.sh
+
+   # Access: http://[server-ip] (no port needed)
+   # Port 80 is typically allowed through firewalls
+   ```
+
+4. **Diagnostic Scripts**:
+   ```bash
+   # Run network diagnostics
+   ./fix-network-access.sh
+
+   # Check port 80 availability
+   ./fix-port80.sh
+   ```
+
+**Complete troubleshooting guide**: See `docs/network-access-guide.md` and `docs/client-troubleshooting.md`
+
 ### API Proxy Configuration
 
 The application uses Next.js API proxy routes to handle CORS and SSL certificate issues:
@@ -121,6 +213,26 @@ The proxy automatically:
 - Both principal and spouse get same branch and access level
 - Separate biometric data for each person
 - Automatic relationship tracking for access management
+
+#### Fingerprint Scanner Integration (ZK8500R)
+- **WebSocket Bridge**: Cross-platform Python service (Windows/Linux/macOS) for universal compatibility
+- **WebUSB Support**: Direct USB device access in supported browsers (Chrome 61+, Edge 79+, Opera 48+)
+- **Manual Template Entry**: Fallback for all scenarios using ZKFinger SDK
+- **Real-time Capture**: Live fingerprint scanning with quality feedback
+- **Device Detection**: Automatic ZK8500R scanner recognition
+- **Quality Assessment**: Built-in fingerprint quality scoring
+- **Template Upload**: Automatic upload to ZKBio server
+
+**Architecture**: Fingerprint scanner connects to client computer (where browser runs), not server.
+
+**Setup Options**:
+- **Bridge Service** (Recommended): `./install-bridge.sh` (Linux/macOS) or `install-bridge-windows.bat` (Windows)
+- **WebUSB browsers**: Connect scanner directly in Chrome/Edge/Opera
+- **Manual Entry**: Use ZKFinger SDK for template extraction
+
+**Cross-platform support**: Full Windows, Linux, and macOS compatibility with automatic platform detection.
+
+**Need help?** See `docs/fingerprint-bridge-setup.md` for complete bridge setup.
 
 ### Data Management
 - **Real-time Sync**: Automatic data refresh every 5 minutes
@@ -211,6 +323,15 @@ The proxy automatically:
 - **API Setup Guide**: `docs/zkbio-api-setup-guide.md` - Complete setup instructions for ZKBio API authorization
 - **API Reference**: `docs/zkteco-api-reference-latest.md` - Full API documentation with working endpoints
 - **API Summary**: `docs/zkteco-api-summary.md` - Overview of ZKTECO BioCVSecurity API integration status
+- **ZK8500R Integration**: `docs/zk8500r-websub-integration.md` - Complete WebUSB fingerprint scanner setup and usage
+- **Network Access**: `docs/network-access-guide.md` - Network configuration and troubleshooting
+- **Client Troubleshooting**: `docs/client-troubleshooting.md` - Client-side network access issues
+- **Smart Capture System**: `docs/smart-capture-system.md` - Automated fingerprint capture with platform detection
+- **WebUSB Alternatives**: `docs/webusb-alternatives.md` - Manual fingerprint entry and alternative solutions
+- **WebUSB Limitations**: `docs/why-webusb-limited.md` - Technical reasons for limited browser support
+- **Fingerprint Bridge**: `docs/fingerprint-bridge-setup.md` - WebSocket bridge service for universal compatibility
+- **Windows Setup**: `docs/windows-setup-guide.md` - Complete Windows installation and configuration
+- **Windows Client**: `docs/windows-client-setup.md` - Windows client setup for remote fingerprint capture
 
 ## Development
 

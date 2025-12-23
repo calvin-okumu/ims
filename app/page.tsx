@@ -17,7 +17,7 @@ import BranchSelect from '../components/BranchSelect';
 import { useTheme } from '../components/ThemeProvider';
 import { Sun, Moon } from 'lucide-react';
 import { uploadBiometricTemplate } from '../services/biometricService';
-import { webUSBScanner } from '../services/webUSBScannerService';
+import { fingerprintCaptureManager } from '../services/fingerprintCaptureManager';
 import ScannerStatusIndicator from '../components/ScannerStatusIndicator';
 
 // Form interfaces
@@ -103,11 +103,13 @@ export default function BiometricAccessApp() {
     // Use area-based door selection hook
     const {
         areas,
+        doorsByDevice,
+        deviceNames,
         filteredDoors,
-        selectedArea,
+        selectedDevice,
         loading: doorsLoading,
         error: doorsError,
-        setSelectedArea
+        setSelectedDevice
     } = useAreaBasedDoorSelection();
 
     // Form states
@@ -200,18 +202,8 @@ export default function BiometricAccessApp() {
         setLoading(prev => ({ ...prev, fingerprint: true }));
 
         try {
-            // Check if scanner is connected
-            const scannerStatus = webUSBScanner.getStatus();
-            if (!scannerStatus.connected) {
-                // Try to connect first
-                const connected = await webUSBScanner.connectDevice();
-                if (!connected) {
-                    throw new Error('Scanner not connected. Please connect the ZK8500R scanner first.');
-                }
-            }
-
-            // Capture fingerprint
-            const fingerprintData = await webUSBScanner.captureFingerprint(
+            // Capture fingerprint using the manager
+            const fingerprintData = await fingerprintCaptureManager.startCapture(
                 parseInt(formData.fingerIndex) || 0
             );
 
@@ -1155,11 +1147,14 @@ export default function BiometricAccessApp() {
                                 className="w-full bg-slate-700 text-white px-4 py-3 rounded-lg border border-slate-600 focus:border-blue-500 focus:outline-none mb-4 text-sm sm:text-base"
                             >
                                 <option value="">Choose an access level...</option>
-                                {accessLevels.map((level, index) => (
-                                    <option key={level.LevelID || level.id || index} value={(level.LevelID || level.id || index + 1).toString()}>
-                                        {level.Name || level.name} - {level.Description}
-                                    </option>
-                                ))}
+                                {accessLevels.map((level, index) => {
+                                    const levelId = level.id || level.LevelID || index + 1;
+                                    return (
+                                        <option key={`level-${levelId}`} value={levelId.toString()}>
+                                            {level.name || level.Name} - {level.Description}
+                                        </option>
+                                    );
+                                })}
                             </select>
 
                             {formData.selectedAccessLevel && (
@@ -1167,9 +1162,10 @@ export default function BiometricAccessApp() {
                                     <h4 className="text-white font-medium mb-3">Door Access Included:</h4>
                                     <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
                                         {(() => {
-                                            const selectedLevel = accessLevels.find((level, index) =>
-                                                (level.LevelID || level.id || index + 1) === parseInt(formData.selectedAccessLevel)
-                                            );
+                                            const selectedLevel = accessLevels.find((level, index) => {
+                                                const levelId = level.id || level.LevelID || index + 1;
+                                                return levelId === parseInt(formData.selectedAccessLevel);
+                                            });
                                             return selectedLevel ? selectedLevel.DoorIds?.map(doorId => {
                                                 const door = filteredDoors.find(d => d.ReaderID === doorId);
                                                 return (
@@ -1256,24 +1252,25 @@ export default function BiometricAccessApp() {
                                     Select Doors for this Access Level *
                                 </h3>
 
-                                {/* Area Filter Dropdown */}
-                                <div className="mb-4">
-                                    <label className="block text-sm font-medium text-slate-300 mb-2">Filter by Area (Optional)</label>
-                                    <select
-                                        value={selectedArea || ''}
-                                        onChange={(e) => setSelectedArea(e.target.value ? Number(e.target.value) : null)}
-                                        className="w-full p-2 border border-slate-600 rounded bg-slate-700 text-white text-sm sm:text-base"
-                                    >
-                                        <option value="">All Areas</option>
-                                        {areas.map((area) => (
-                                            <option key={area.AreaID} value={area.AreaID}>
-                                                {area.Name}
-                                            </option>
-                                        ))}
-                                    </select>
-                                </div>
 
-                                <div className="space-y-4">
+
+                                <div className="space-y-6">
+                                    <div className="mb-4">
+                                        <label className="block text-sm font-medium text-slate-300 mb-2">Filter by Device (Optional)</label>
+                                        <select
+                                            value={selectedDevice || ''}
+                                            onChange={(e) => setSelectedDevice(e.target.value || null)}
+                                            className="w-full p-2 border border-slate-600 rounded bg-slate-700 text-white text-sm sm:text-base"
+                                        >
+                                            <option value="">All Devices</option>
+                                            {Object.keys(doorsByDevice).map((deviceId) => (
+                                                <option key={deviceId} value={deviceId}>
+                                                    {deviceNames[deviceId] || `Device ${deviceId.slice(-4)}`}
+                                                </option>
+                                            ))}
+                                        </select>
+                                    </div>
+
                                     {doorsLoading ? (
                                         <div className="space-y-3">
                                             {Array.from({ length: 4 }, (_, i) => (
@@ -1285,24 +1282,33 @@ export default function BiometricAccessApp() {
                                             <AlertCircle className="w-12 h-12 text-red-500 mx-auto mb-3" />
                                             <p className="text-red-800 font-medium">{doorsError}</p>
                                         </div>
-                                    ) : filteredDoors.length === 0 ? (
+                                    ) : Object.keys(doorsByDevice).length === 0 ? (
                                         <div className="text-center p-8 bg-slate-50 border border-slate-200 rounded-lg">
                                             <DoorOpen className="w-12 h-12 text-slate-400 mx-auto mb-3" />
-                                            <p className="text-slate-600 font-medium">No doors found for this area</p>
-                                            <p className="text-slate-500 text-sm mt-2">Try selecting a different area or check if doors are properly configured</p>
+                                            <p className="text-slate-600 font-medium">No doors found</p>
+                                            <p className="text-slate-500 text-sm mt-2">Check if doors are properly configured in the ZKBio system</p>
                                         </div>
                                     ) : (
-                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                                            {filteredDoors.map(door => {
-                                                const isSelected = accessLevelForm.selectedDoors.includes(door.ReaderID || 0);
-                                                return (
-                                                    <label
-                                                        key={door.ReaderID}
-                                                        className={`relative group cursor-pointer rounded-xl border-2 p-4 transition-all duration-200 ${isSelected
-                                                                ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-500 shadow-lg transform scale-105'
-                                                                : 'bg-white border-slate-200 hover:border-blue-300 hover:shadow-md'
-                                                            }`}
-                                                    >
+                                        <div>
+                                            {Object.entries(doorsByDevice)
+                                                .filter(([deviceId]) => !selectedDevice || deviceId === selectedDevice)
+                                                .map(([deviceId, doors]) => (
+                                                    <div key={deviceId} className="bg-slate-800/30 rounded-lg p-4 border border-slate-700 mb-6">
+                                                        <h4 className="text-lg font-semibold text-white mb-4 flex items-center">
+                                                            <DoorOpen className="w-5 h-5 mr-2 text-blue-400" />
+                                                            {deviceNames[deviceId] || `Device ${deviceId.slice(-4)}`} ({doors.length} doors)
+                                                        </h4>
+                                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                                                            {doors.map(door => {
+                                                                const isSelected = accessLevelForm.selectedDoors.includes(door.id);
+                                                                return (
+                                                                    <label
+                                                                        key={door.id}
+                                                                        className={`relative group cursor-pointer rounded-xl border-2 p-4 transition-all duration-200 ${isSelected
+                                                                                ? 'bg-gradient-to-br from-blue-50 to-indigo-50 border-blue-500 shadow-lg transform scale-105'
+                                                                                : 'bg-slate-700 border-slate-600 hover:border-blue-300 hover:shadow-md'
+                                                                            }`}
+                                                                    >
                                                         <div className="flex items-start justify-between">
                                                             <div className="flex items-center space-x-3">
                                                                 <div className={`relative w-5 h-5 rounded border-2 transition-colors ${isSelected
@@ -1333,6 +1339,9 @@ export default function BiometricAccessApp() {
                                                     </label>
                                                 );
                                             })}
+                                                </div>
+                                            </div>
+                                        ))}
                                         </div>
                                     )}
                                 </div>
@@ -1380,18 +1389,21 @@ export default function BiometricAccessApp() {
                                 </div>
                             ) : (
                                 <div className="space-y-4">
-                                    {accessLevels.map(level => (
-                                        <div key={level.LevelID} className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
+                                    {accessLevels.map((level, index) => (
+                                        <div key={level.id || level.LevelID || `level-${index}`} className="bg-slate-700/50 p-4 rounded-lg border border-slate-600">
                                             <div className="flex justify-between items-start mb-3">
                                                 <div>
-                                                    <h4 className="text-white font-semibold text-lg">{level.Name}</h4>
+                                                    <h4 className="text-white font-semibold text-lg">{level.name || level.Name}</h4>
                                                     <p className="text-slate-400 text-sm">{level.Description}</p>
                                                 </div>
                                                 <button
                                                     onClick={() => {
-                                                        // Here you would integrate with your API to delete the access level
-                                                        setAccessLevels(prev => prev.filter(l => l.LevelID !== level.LevelID));
-                                                        showNotification('Access level deleted successfully', 'success');
+                                                        const levelId = level.id || level.LevelID;
+                                                        if (levelId) {
+                                                            // Here you would integrate with your API to delete the access level
+                                                            setAccessLevels(prev => prev.filter(l => (l.id || l.LevelID) !== levelId));
+                                                            showNotification('Access level deleted successfully', 'success');
+                                                        }
                                                     }}
                                                     className="text-red-400 hover:text-red-300 transition-colors"
                                                 >

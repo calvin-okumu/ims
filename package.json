@@ -4,6 +4,16 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
+    "dev:network": "next dev -H 0.0.0.0",
+    "dev:port80": "sudo ./start-port80.sh",
+    "bridge:install": "./install-bridge.sh",
+    "bridge:install:windows": "install-bridge-windows.bat",
+    "bridge:start": "./start-bridge.sh",
+    "bridge:start:windows": "start-bridge.bat",
+    "bridge:test": "python3 services/fingerprint_bridge_simple.py",
+    "bridge:test:windows": "python services/fingerprint_bridge_windows.py",
+    "firewall:disable": "sudo ufw disable",
+    "firewall:enable": "sudo ufw enable && sudo ufw allow 3000",
     "build": "next build",
     "start": "next start",
     "lint": "eslint"

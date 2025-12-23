@@ -46,13 +46,23 @@ A comprehensive banking access control system that integrates with the ZKTECO Bi
 - **Edit Modal**: Dedicated modal for user editing with form validation
 - **Personnel Dismissal**: Safe user deletion with confirmation dialog
 
-#### **6. API Infrastructure**
-- **8 API Routes Created**:
+#### **6. Door & Device Management**
+- **Device-Based Door Grouping**: Doors organized by access device ID with filter support
+- **Device Name Resolution**: Fetches device names from ZK API for proper labeling
+- **Door Selection Interface**: Grouped door selection with device filtering
+- **Real-time Door Data**: Fetches from `/api/door/list` with device association
+- **Reader Integration**: Access readers linked to doors for complete access control
+
+#### **7. API Infrastructure**
+- **11 API Routes Created**:
   - `/api/persons` - Person CRUD operations (POST for creation, GET for listing)
   - `/api/biometric` - Biometric template management
   - `/api/branches` - Branch/department management
   - `/api/access-levels` - Access level listing
   - `/api/access-levels/assign` - Access level assignment (full string IDs)
+  - `/api/doors` - Door listing with device grouping
+  - `/api/devices` - Access device information
+  - `/api/readers` - Access reader management
 - **Proxy Architecture**: Next.js API routes handle CORS and SSL
 - **Error Handling**: Comprehensive error recovery with user feedback
 

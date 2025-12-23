@@ -154,6 +154,47 @@ export interface BranchFilters {
   parentCode?: string;
 }
 
+// Notification Types
+export interface NotificationState {
+  type: 'success' | 'error' | 'warning' | 'info' | 'loading';
+  message: string;
+}
+
+// Registration Form Data
+export interface RegistrationFormData {
+  firstName: string;
+  lastName: string;
+  email: string;
+  phone: string;
+  dateOfBirth: string;
+  gender: string;
+  address: string;
+  spouseFirstName: string;
+  spouseLastName: string;
+  spouseDateOfBirth: string;
+  spouseGender: string;
+  spouseFingerIndex: string;
+  fingerIndex: string;
+  selectedAccessLevel: string;
+  fingerprintData?: {
+    template: string;
+    quality: number;
+    capturedAt: string;
+    bioType: number;
+    version: string;
+    templateNo: string;
+  } | null;
+  spouseFingerprintData?: {
+    template: string;
+    quality: number;
+    capturedAt: string;
+    bioType: number;
+    version: string;
+    templateNo: string;
+  } | null;
+  registrationType: 'single' | 'couple';
+}
+
 // Legacy interfaces for backward compatibility
 export interface User {
   id: number;

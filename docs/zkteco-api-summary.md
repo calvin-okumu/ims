@@ -76,7 +76,7 @@ This application successfully integrates with **ZKBio CVSecurity API v2.0** usin
 
 ### ✅ Working Endpoints (via Proxy) - API v2 where available
 
-#### Person Management (v2.0)
+#### Person Management (v2)
 - `POST /api/persons` → `POST v2/person/getPersonList` - ✅ **WORKING** - Lists persons with pagination and filtering
 - `POST /api/persons` → `POST person/add` - ✅ **WORKING** - Creates new person with PIN, branch, and access level
 - `POST /api/persons` → `POST v2/person/getPersonList` - ✅ **WORKING** - Legacy person list retrieval
@@ -99,6 +99,13 @@ This application successfully integrates with **ZKBio CVSecurity API v2.0** usin
 #### Branch/Department Management (v1.0)
 - `GET /api/branches` → `POST department/getDepartmentList` - ✅ **WORKING** - Lists hierarchical departments
 - `POST /api/branches` → `POST department/add` - ✅ **WORKING** - Creates new departments
+
+#### Door Management (v2.0)
+- `GET /api/doors` → `GET /api/door/list` - ✅ **WORKING** - Lists all doors with device grouping
+- `GET /api/devices` → `GET /api/device/accList` - ✅ **WORKING** - Lists access devices for naming
+
+#### Reader Management (v2.0)
+- `GET /api/readers` → `GET /api/v2/reader/list` - ✅ **WORKING** - Lists access readers associated with doors
 
 ### 📊 Current Data Status
 
@@ -124,19 +131,6 @@ The system now uses PIN-based account numbers with automatic spouse relationship
     "gender": "F",
     "relationship": "spouse",
     "linkedTo": "23510009090"
-  },
-  {
-    "pin": "902190",
-    "name": "Calvin Okumu",
-    "deptCode": "1",
-    "relationship": "principal"
-  },
-  {
-    "pin": "902190s1",
-    "name": "Mary Doe",
-    "deptCode": "1",
-    "relationship": "spouse",
-    "linkedTo": "902190"
   }
 ]
 ```
@@ -146,12 +140,42 @@ The system now uses PIN-based account numbers with automatic spouse relationship
 - **Spouse**: `{accountNumber}s1` (automatic generation)
 - **Relationship**: Tracked via PIN suffix for access management
 
-#### Access Level Data (1 record loaded)
+#### Access Level Data (2 records loaded)
 ```json
 [
   {
     "id": "402880f39ae893ad019ae895fe3d0463",
-    "name": "General"
+    "name": "General Access"
+  },
+  {
+    "id": "402880f39ae893ad019ae895fe3d0464",
+    "name": "VIP Access"
+  }
+]
+```
+
+#### Door Data Structure (Device-Grouped)
+```json
+[
+  {
+    "id": "402880209afc9bd7019b1210f8a60179",
+    "name": "RND Door-1",
+    "deviceId": "402880209afc9bd7019b1210f7c8013e"
+  },
+  {
+    "id": "402880209afc9bd7019b1210f8a8017a",
+    "name": "RND Door-2",
+    "deviceId": "402880209afc9bd7019b1210f7c8013e"
+  }
+]
+```
+
+#### Device Data Structure
+```json
+[
+  {
+    "id": "402880209afc9bd7019b1210f7c8013e",
+    "name": "Main Access Controller"
   }
 ]
 ```
@@ -170,16 +194,21 @@ The system now uses PIN-based account numbers with automatic spouse relationship
 - **Success Feedback**: Notifications for successful operations
 - **Error Recovery**: Graceful handling of API failures
 
-### 🚧 Planned Endpoints (Not Yet Implemented)
+### ✅ Recently Implemented Endpoints
+
+#### Door Management (v2.0)
+- `GET /api/doors` → `GET /api/door/list` - ✅ **WORKING** - Lists all doors with device grouping
+- Door selection grouped by device ID with filter support
+
+#### Device Management (v2.0)
+- `GET /api/devices` → `GET /api/device/accList` - ✅ **WORKING** - Lists access devices for naming
 
 #### Reader Management (v2.0)
-- `GET /api/v2/reader/list` - List readers
-- `POST /api/v2/reader/add` - Create reader
-- `PUT /api/v2/reader/update/{id}` - Update reader
-- `POST /api/v2/reader/delete/{id}` - Delete reader
+- `GET /api/readers` → `GET /api/v2/reader/list` - ✅ **WORKING** - Lists access readers associated with doors
+
+### 🚧 Planned Endpoints (Not Yet Implemented)
 
 #### Door Control (v2.0)
-- `GET /api/v2/door/list` - List doors
 - `POST /api/door/remoteOpenById` - Remote door open
 - `POST /api/door/remoteCloseById` - Remote door close
 - `GET /api/door/doorStateById` - Get door state
@@ -217,6 +246,8 @@ The system now uses PIN-based account numbers with automatic spouse relationship
 - **Real-time Sync**: Automatic data refresh with manual override options
 - **Biometric Retrieval**: Fetch templates via `/api/v2/bioTemplate/getFgListByPin/{pin}`
 - **Access Control**: Assign/remove access levels with immediate API synchronization
+- **Door Management**: Device-grouped door selection with filtering capabilities
+- **Device Integration**: Access device naming and management
 
 ### API Integration Features
 - **Proxy Routes**: All ZK API calls routed through Next.js for CORS/SSL handling
